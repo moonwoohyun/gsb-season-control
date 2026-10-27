@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시즌 생산관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#/">시즌 생산관리</a>
+  <nav class="topnav" aria-label="주 메뉴">
+    <a href="#/board">진행 현황</a>
+    <a href="#/items">아이템별</a>
+    <a href="#/inbound">3PL 검수</a>
+    <a href="#/barcode">바코드</a>
+    <a href="#/archive">패킹리스트 보관함</a>
+  </nav>
+  <div class="topright">
+    <label class="seasonsel">시즌
+      <select id="season" aria-label="시즌 선택"></select>
+    </label>
+    <span id="who" class="who"></span>
+  </div>
+</header>
+<div id="banner"></div>
+<main id="app" class="wrap"></main>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
