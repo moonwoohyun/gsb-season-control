@@ -1,21 +1,21 @@
 {
  "v": 1,
- "updated": "2026-10-29 13:13",
+ "updated": "2026-10-29 18:32",
  "kdf": {
   "name": "PBKDF2-SHA256",
-  "salt": "sAEMxkK51z4qHiAsaD7AiA==",
+  "salt": "6eN9ykFh0I+cdixiXmPojg==",
   "iter": 250000
  },
  "check": {
   "v": 1,
-  "iv": "wC/vbGF15PoNy9j4",
-  "ct": "LnAeABgkDIO21IfMtMt716HOxqF8ev3twVrbYg=="
+  "iv": "+lppepOt+2W76Q7f",
+  "ct": "Ce5JV9jK3xJc6T9eal/nUEOsOGB+TXXJhtfHvw=="
  },
  "seasons": [
   {
    "label": "27SS",
    "file": "data/seasons/27SS.json",
-   "updated": "2026-10-29 13:13"
+   "updated": "2026-10-29 18:32"
   }
  ]
 }
