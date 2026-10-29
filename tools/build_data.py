@@ -91,6 +91,108 @@ def read_sheet(path):
     return stages, seasons
 
 
+QSTAGES = ["작업 지시", "재단 수량", "워싱처 입고", "완성집 입고", "수납용 입고", "3PL 입고"]
+QKEYS = ["order", "cut", "wash", "finish", "store", "tpl"]
+INFO_KEYS = {"품번": "code", "영문 판매명 (Flow FIX)": "name", "기획명": "plan", "시즌": "season", "구분": "type", "차수": "round",
+             "카테고리": "category", "상태": "status", "현재 단계": "stage", "최근 일자": "updated", "최근 내용": "recent",
+             "혼용율 · 겉감": "mixOuter", "혼용율 · 안감": "mixLining", "혼용율 · 배색(아더)": "mixOther", "원산지 (제조국)": "origin",
+             "봉제공장": "factory", "FIT": "fit", "원단": "fabric", "규격 · 중량": "spec", "워싱 여부": "wash", "워싱기법": "washMethod",
+             "사이즈 구성": "sizes", "세트 연결": "set", "위키 문서": "wiki", "메모": "memo"}
+DUMMY_BARCODE = "0000000000000"
+
+
+def num(v):
+    if v in (None, ""): return None
+    try:
+        f = float(str(v).replace(",", ""))
+        return int(f) if f == int(f) else f
+    except ValueError:
+        return None
+
+
+def is_product(wb):
+    return all(s in wb.sheetnames for s in ("기본정보", "수량", "히스토리"))
+
+
+def parse_product(path):
+    """제품 파일 양식 v3 (파일 하나 = 품번 1건, 컬러 1~5). 원가 탭은 읽지 않는다."""
+    with open(path, "rb") as fh:  # 확장자가 없는 파일도 읽도록 파일 객체로 연다
+        wb = openpyxl.load_workbook(fh, data_only=True)
+    if not is_product(wb): return None
+    o, colors = {}, []
+    for r in wb["기본정보"].iter_rows(min_row=1, values_only=True):
+        lab = cell(r[1]) if len(r) > 1 else ""
+        if re.fullmatch(r"컬러 \d", lab):
+            code = cell(r[2]); name = cell(r[3]) if len(r) > 3 else ""
+            if code: colors.append({"code": code, "name": name})
+        elif lab in INFO_KEYS:
+            o[INFO_KEYS[lab]] = cell(r[2])
+    if not o.get("code"): return None
+    # 히스토리
+    hist = []
+    for r in wb["히스토리"].iter_rows(min_row=5, values_only=True):
+        d, col, st, txt, src, link = (list(r) + [None] * 7)[1:7]
+        if not (d or st or txt): continue
+        hist.append({"date": cell(d), "color": cell(col), "stage": cell(st), "text": cell(txt), "source": cell(src), "link": cell(link)})
+    # 수량 (컬러 블록)
+    qty = []
+    rows = list(wb["수량"].iter_rows(values_only=True))
+    for i, r in enumerate(rows):
+        lab = cell(r[1]) if len(r) > 1 else ""
+        m = re.match(r"컬러 (\d)", lab)
+        if not m or "비어 있음" in lab: continue
+        k = int(m.group(1)) - 1
+        block = {"color": colors[k]["code"] if k < len(colors) else lab, "stages": {}}
+        for j, key in enumerate(QKEYS):
+            rr = rows[i + 1 + j]
+            sizes = [num(v) for v in rr[2:7]]
+            if any(v is not None for v in sizes):
+                block["stages"][key] = {"sizes": sizes, "total": num(rr[7])}
+        dr = rows[i + 7]
+        diff = [num(v) for v in dr[2:7]]
+        if any(v is not None for v in diff): block["diff"] = {"sizes": diff, "total": num(dr[7])}
+        qty.append(block)
+    # 바코드
+    barcodes = []
+    for r in wb["바코드"].iter_rows(min_row=5, values_only=True):
+        col, size, bc, kind, reg, memo = (list(r) + [None] * 8)[1:7]
+        bc = cell(bc)
+        if not bc or bc == DUMMY_BARCODE or "예시" in cell(memo): continue
+        barcodes.append({"color": cell(col), "size": cell(size), "barcode": bc, "kind": cell(kind), "date": cell(reg), "memo": cell(memo)})
+    # 3PL 검수
+    ws = wb["3PL검수"]
+    tpl = {"date": cell(ws["C4"].value), "vendor": cell(ws["F4"].value), "rows": []}
+    for r in ws.iter_rows(min_row=7, max_row=46, values_only=True):
+        col, size, bc, pname, pack, insp, diff, res = (list(r) + [None] * 10)[1:9]
+        bc = cell(bc)
+        if not bc or bc == DUMMY_BARCODE: continue
+        tpl["rows"].append({"color": cell(col), "size": cell(size), "barcode": bc, "packed": num(pack), "checked": num(insp), "diff": num(diff), "result": cell(res)})
+    item = {k: o.get(k, "") for k in ("season", "type", "code", "name", "plan", "stage", "status", "updated", "recent", "memo", "category", "round")}
+    item["color"] = ", ".join(c["code"] for c in colors)
+    item["tab"] = "드랍" if item["status"] == "드랍" else (item["type"] or "신규")
+    if item["tab"] == "드랍" and not item["stage"]: item["stage"] = "08_드랍"
+    item["source"] = "product"
+    item["file"] = Path(path).name
+    item["detail"] = {"colors": colors, "info": {k: o.get(k, "") for k in ("mixOuter", "mixLining", "mixOther", "origin", "factory", "fit", "fabric", "spec", "wash", "washMethod", "sizes", "set", "wiki")},
+                      "history": hist, "qty": qty, "barcodes": barcodes, "tpl": tpl}
+    return item
+
+
+def read_products(folder):
+    found = []
+    for p in sorted(Path(folder).rglob("*")):
+        if not p.is_file() or p.name.startswith(("~$", ".")): continue
+        try:
+            it = parse_product(p)
+        except Exception as e:  # 엑셀이 아닌 파일 등
+            continue
+        if it:
+            if not it["category"]:
+                m = re.match(r"^[\d._\s]*(.+)$", p.parent.name); it["category"] = m.group(1).strip() if m else ""
+            found.append(it)
+    return found
+
+
 def load_password(args):
     if args.password: return args.password
     if args.password_file:
@@ -104,7 +206,8 @@ def load_password(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--xlsx", required=True)
+    ap.add_argument("--xlsx", required=True, help="시즌 진행현황 시트 (xlsx 내보내기)")
+    ap.add_argument("--products", help="제품 파일 폴더 (하위 폴더까지 읽음, 품번 1파일)")
     ap.add_argument("--out", default="data")
     ap.add_argument("--password"); ap.add_argument("--password-file")
     ap.add_argument("--sheet-url", default="")
@@ -139,6 +242,12 @@ def main():
     key = derive(password, salt)
 
     stages, seasons = read_sheet(args.xlsx)
+    products = read_products(args.products) if args.products else []
+    for it in products:
+        label = it["season"] or "시즌 미지정"
+        # 진행현황 시트에 같은 품번이 있으면 제품 파일이 우선
+        seasons[label] = [x for x in seasons.get(label, []) if x.get("code") != it["code"]] + [it]
+    if products: print("제품 파일:", ", ".join(f"{p['code']}({p['season']})" for p in products))
     now = dt.datetime.now(KST).strftime("%Y-%m-%d %H:%M")
     payloads = dict(keep)
     for label, items in seasons.items():
