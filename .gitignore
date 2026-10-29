@@ -1,0 +1,4 @@
+data_plain/
+*.xlsx
+site.json
+__pycache__/

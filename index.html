@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>시즌 생산관리</title>
+<meta name="robots" content="noindex, nofollow">
+<title>리넥츠 시즌 관제탑</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -11,24 +12,15 @@
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#/">시즌 생산관리</a>
-  <nav class="topnav" aria-label="주 메뉴">
-    <a href="#/board">진행 현황</a>
-    <a href="#/items">아이템별</a>
-    <a href="#/inbound">3PL 검수</a>
-    <a href="#/barcode">바코드</a>
-    <a href="#/archive">패킹리스트 보관함</a>
-  </nav>
-  <div class="topright">
-    <label class="seasonsel">시즌
-      <select id="season" aria-label="시즌 선택"></select>
-    </label>
-    <span id="who" class="who"></span>
+  <a class="brand" href="#">리넥츠 시즌 관제탑</a>
+  <div class="searchbox" role="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input type="search" id="q" placeholder="품번 · 컬러 · 아이템명 · 기획명 · 내용 검색" aria-label="검색" autocomplete="off" disabled>
   </div>
+  <div class="topright"><span id="updated" class="upd"></span><button id="lock" class="lnk" hidden>잠그기</button></div>
 </header>
-<div id="banner"></div>
 <main id="app" class="wrap"></main>
-<script src="config.js"></script>
+<dialog id="detail" aria-labelledby="dtitle"></dialog>
 <script src="app.js"></script>
 </body>
 </html>
