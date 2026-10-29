@@ -9,7 +9,8 @@ var KEY_STORE = 'renacts.key';
 var COLORS = { GN:['#2F5D43','#fff'], NV:['#2A3560','#fff'], BE:['#D9C3A0','#2A2218'], BG:['#D9C3A0','#2A2218'], LBU:['#BCD0E6','#1B2A3D'], BK:['#1E1E1E','#fff'], BL:['#1E1E1E','#fff'], DBL:['#22304F','#fff'], WH:['#F2F0EA','#2A2A28'], IV:['#EFE8D6','#2A2A28'], GR:['#8C8C88','#fff'], CH:['#4A4A48','#fff'], BR:['#6B4A2E','#fff'], KH:['#7A7350','#fff'], RED:['#8E2A25','#fff'], 'RED MULTI':['#8E2A25','#fff'], 'GREEN MULTI':['#2F5D43','#fff'], 'WHITE MULTI':['#ECEAE2','#2A2A28'], 'ORANGE MULTI':['#E0954F','#2A1A0A'] };
 var FIELD_LABEL = [['season','시즌'],['type','구분'],['code','품번'],['color','컬러'],['name','아이템명 (영문)'],['plan','기획명'],['stage','현재 단계'],['status','상태'],['updated','업데이트 날짜'],['recent','최근 내용'],['memo','메모']];
 
-var S = { manifest: null, key: null, seasons: [], q: '', type: 'all', view: null, stagesOff: {}, all: [] };
+var S = { manifest: null, key: null, seasons: [], q: '', type: 'all', cat: 'all', view: null, stagesOff: {}, all: [] };
+var QLABEL = [['order','작업 지시'],['cut','재단 수량'],['wash','워싱처 입고'],['finish','완성집 입고'],['store','수납용 입고'],['tpl','3PL 입고']];
 
 function $(s, el) { return (el || document).querySelector(s); }
 function $$(s, el) { return Array.prototype.slice.call((el || document).querySelectorAll(s)); }
@@ -97,12 +98,13 @@ function open(key) {
 function readHash() {
   var h = location.hash.replace(/^#/, ''), p = {};
   h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
-  S.q = p.q || ''; S.type = p.t || 'all'; S.view = p.v || (window.innerWidth < 720 ? 'list' : 'board');
+  S.q = p.q || ''; S.type = p.t || 'all'; S.cat = p.c || 'all'; S.view = p.v || (window.innerWidth < 720 ? 'list' : 'board');
 }
 function writeHash() {
   var p = [];
   if (S.q) p.push('q=' + encodeURIComponent(S.q));
   if (S.type !== 'all') p.push('t=' + encodeURIComponent(S.type));
+  if (S.cat !== 'all') p.push('c=' + encodeURIComponent(S.cat));
   p.push('v=' + S.view);
   history.replaceState(null, '', '#' + p.join('&'));
 }
@@ -111,7 +113,7 @@ function writeHash() {
 function norm(s) { return String(s || '').toLowerCase(); }
 function hay(it) {
   var code = it.code || '', color = it.color || '';
-  return norm([it.season, it.type, code, color, code && color ? code + '_' + color : '', it.name, it.plan, it.stage, it.status, it.updated, it.recent, it.memo].join(' \u0001 '));
+  return norm([it.season, it.type, code, color, code && color ? code + '_' + color : '', it.name, it.plan, it.stage, it.status, it.updated, it.recent, it.memo, it.category, it.round, it.file].join(' \u0001 '));
 }
 function tokens() { return norm(S.q).split(/\s+/).filter(Boolean); }
 function matches(it) {
@@ -119,6 +121,7 @@ function matches(it) {
   for (var i = 0; i < t.length; i++) if (it._hay.indexOf(t[i]) < 0) return false;
   if (S.type !== 'all' && (S.type === '드랍' ? it.tab !== '드랍' && it.status !== '드랍' : it.type !== S.type || it.tab === '드랍')) return false;
   if (S.stagesOff[stageLabel(it.stage)]) return false;
+  if (S.cat !== 'all' && (it.category || '미분류') !== S.cat) return false;
   return true;
 }
 function hl(text) {
@@ -149,11 +152,61 @@ function md(d) { var m = /^\d{4}-(\d\d)-(\d\d)/.exec(d || ''); return m ? m[1] +
 
 function card(it) {
   return '<button class="kcard" style="--kc:' + stageColor(it.stage) + '" data-id="' + esc(it._id) + '">' +
-    '<span class="kt"><span class="kc mono">' + codeText(it) + '</span>' + colorChip(it.color) + '</span>' +
+    '<span class="kt"><span class="kc mono">' + codeText(it) + (it.round ? ' <span class="chip gray">' + hl(it.round) + '</span>' : '') + '</span><span>' + colorChip(it.color) + '</span></span>' +
+    (it.category ? '<span class="ke">' + hl(it.category) + '</span>' : '') +
     '<span class="kn">' + hl(title(it)) + '</span>' +
     (it.name && it.plan ? '<span class="ke">' + hl(it.name) + '</span>' : '') +
     (it.recent || it.updated ? '<span class="kstat">' + (it.updated ? '<b>' + esc(md(it.updated)) + '</b> · ' : '') + hl(it.recent || '내용 없음') + '</span>' : '') +
     (it.memo ? '<span class="kflag">' + hl(it.memo) + '</span>' : '') + '</button>';
+}
+
+function catSelect() {
+  var cats = {}; S.all.forEach(function (it) { cats[it.category || '미분류'] = 1; });
+  var list = Object.keys(cats).sort();
+  if (list.length < 2 && S.cat === 'all') return '';
+  return '<select id="cat" class="catsel" aria-label="카테고리"><option value="all">카테고리 전체</option>' + list.map(function (c) {
+    return '<option value="' + esc(c) + '"' + (S.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>';
+}
+
+function fmtN(v, sign) { if (v == null || v === '') return ''; return (sign && v > 0 ? '+' : '') + Number(v).toLocaleString(); }
+function detailHtml(it) {
+  var D = it.detail, h = '';
+  var info = [['혼용율 · 겉감','mixOuter'],['혼용율 · 안감','mixLining'],['혼용율 · 배색','mixOther'],['원산지','origin'],['봉제공장','factory'],['FIT','fit'],['원단','fabric'],['규격 · 중량','spec'],['워싱','washMethod'],['사이즈 구성','sizes'],['세트 연결','set']];
+  h += '<h3 class="dsec">소재 · 생산</h3><div class="kv2">' + info.filter(function (f) { return D.info[f[1]]; }).map(function (f) {
+    return '<div class="kv"><span>' + f[0] + '</span><span>' + esc(D.info[f[1]]) + '</span></div>'; }).join('') + '</div>';
+  if (D.colors && D.colors.length) h += '<div class="clist">' + D.colors.map(function (c) { return colorChip(c.code) + (c.name ? ' <span class="sub">' + esc(c.name) + '</span>' : ''); }).join('<span class="sep"></span>') + '</div>';
+  // 수량
+  h += '<h3 class="dsec">수량 <span class="sub">컬러별 · 사이즈별</span></h3>';
+  var anyQ = (D.qty || []).some(function (b) { return Object.keys(b.stages).length; });
+  if (!anyQ) h += '<p class="empty">아직 입력된 수량이 없어요.</p>';
+  (D.qty || []).forEach(function (b) {
+    if (!Object.keys(b.stages).length) return;
+    var used = [0,1,2,3,4].filter(function (i) { return QLABEL.some(function (q) { var s = b.stages[q[0]]; return s && s.sizes[i] != null; }) || (b.diff && b.diff.sizes[i] != null); });
+    h += '<div class="qwrap"><div class="qtitle">' + colorChip(b.color) + '</div><table class="qt"><thead><tr><th>단계</th>' + used.map(function (i) { return '<th class="n">' + (i + 1) + '</th>'; }).join('') + '<th class="n">토탈</th></tr></thead><tbody>' +
+      QLABEL.filter(function (q) { return b.stages[q[0]]; }).map(function (q) { var s = b.stages[q[0]];
+        return '<tr><td>' + q[1] + '</td>' + used.map(function (i) { return '<td class="n">' + fmtN(s.sizes[i]) + '</td>'; }).join('') + '<td class="n"><b>' + fmtN(s.total) + '</b></td></tr>'; }).join('') +
+      (b.diff ? '<tr class="diff"><td>편차</td>' + used.map(function (i) { var v = b.diff.sizes[i]; return '<td class="n ' + (v == null ? '' : v === 0 ? 'ok' : 'bad') + '">' + fmtN(v, true) + '</td>'; }).join('') + '<td class="n"><b>' + fmtN(b.diff.total, true) + '</b></td></tr>' : '') +
+      '</tbody></table></div>';
+  });
+  // 히스토리
+  h += '<h3 class="dsec">히스토리 <span class="sub">' + (D.history || []).length + '건</span></h3>';
+  h += (D.history || []).length ? '<table class="qt"><tbody>' + D.history.slice().reverse().map(function (r, i) {
+    return '<tr' + (i === 0 ? ' class="latest"' : '') + '><td class="mono nowrap">' + esc(r.date) + '</td><td>' + (r.color ? colorChip(r.color) : '<span class="sub">전체</span>') + '</td><td><span class="chip" style="' + stageStyle(r.stage) + '">' + esc(r.stage) + '</span></td><td>' + esc(r.text) + (r.link ? ' <a href="' + esc(r.link) + '" target="_blank" rel="noopener">첨부</a>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="empty">기록이 없어요.</p>';
+  // 3PL
+  var T = D.tpl || { rows: [] };
+  h += '<h3 class="dsec">3PL 검수' + (T.date ? ' <span class="sub">' + esc(T.date) + (T.vendor ? ' · ' + esc(T.vendor) : '') + '</span>' : '') + '</h3>';
+  if (T.rows.length) {
+    var tp = 0, tc = 0; T.rows.forEach(function (r) { tp += r.packed || 0; tc += r.checked || 0; });
+    h += '<table class="qt"><thead><tr><th>컬러</th><th>사이즈</th><th>바코드</th><th class="n">패킹</th><th class="n">검수</th><th class="n">차이</th><th>결과</th></tr></thead><tbody>' + T.rows.map(function (r) {
+      var cls = r.result === '일치' ? 'ok' : r.result === '부족' ? 'bad' : r.result === '초과' ? 'amb' : '';
+      return '<tr><td>' + colorChip(r.color) + '</td><td>' + esc(r.size) + '</td><td class="mono">' + esc(r.barcode) + '</td><td class="n">' + fmtN(r.packed) + '</td><td class="n">' + fmtN(r.checked) + '</td><td class="n">' + fmtN(r.diff, true) + '</td><td class="' + cls + '">' + esc(r.result) + '</td></tr>'; }).join('') +
+      '<tr class="diff"><td colspan="3">TOTAL</td><td class="n">' + fmtN(tp) + '</td><td class="n">' + fmtN(tc) + '</td><td class="n">' + fmtN(tc - tp, true) + '</td><td></td></tr></tbody></table>';
+  } else h += '<p class="empty">아직 검수 기록이 없어요.</p>';
+  // 바코드
+  h += '<h3 class="dsec">바코드 <span class="sub">' + (D.barcodes || []).length + '개</span></h3>';
+  h += (D.barcodes || []).length ? '<div class="codes">' + D.barcodes.map(function (b) { return '<div class="code">' + colorChip(b.color) + ' <span class="sub">' + esc(b.size) + '</span><div class="mono">' + esc(b.barcode) + '</div></div>'; }).join('') + '</div>' : '<p class="empty">아직 등록된 바코드가 없어요.</p>';
+  if (it.file) h += '<p class="sub" style="margin-top:14px">원본: ' + esc(it.category ? it.category + ' / ' : '') + esc(it.file) + '</p>';
+  return h;
 }
 
 /* ---------- 화면 ---------- */
@@ -167,12 +220,12 @@ function render() {
     return '<button class="segb' + (S.type === t[0] ? ' on' : '') + '" data-type="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
     '<div class="seg" role="group" aria-label="보기">' + [['board','보드'],['list','목록']].map(function (t) {
     return '<button class="segb' + (S.view === t[0] ? ' on' : '') + '" data-view="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>' +
-    '<div class="grow"></div><div class="result">' + (S.q || S.type !== 'all' || Object.keys(S.stagesOff).some(function (k) { return S.stagesOff[k]; }) ? '검색 결과 <b>' + shown.length + '</b>건 / 전체 ' + S.all.length + '건 · <button class="lnk" style="color:var(--navy);border-color:#CFCCC0" id="reset">초기화</button>' : '전체 <b>' + S.all.length + '</b>건') + '</div></div>';
+    catSelect() + '<div class="grow"></div><div class="result">' + (S.q || S.type !== 'all' || S.cat !== 'all' || Object.keys(S.stagesOff).some(function (k) { return S.stagesOff[k]; }) ? '검색 결과 <b>' + shown.length + '</b>건 / 전체 ' + S.all.length + '건 · <button class="lnk" style="color:var(--navy);border-color:#CFCCC0" id="reset">초기화</button>' : '전체 <b>' + S.all.length + '</b>건') + '</div></div>';
   if (stagesAll.length) h += '<div class="stagef" aria-label="단계 필터">' + stagesAll.map(function (st) {
     return '<button class="sbtn' + (S.stagesOff[st] ? ' off' : '') + '" style="' + stageStyle(st) + '" data-stage="' + esc(st) + '" aria-pressed="' + (!S.stagesOff[st]) + '">' + esc(st.replace('_', ' ')) + '</button>'; }).join('') + '</div>';
   // 시즌 바로가기
   var bySeason = {}; shown.forEach(function (it) { (bySeason[it._season] = bySeason[it._season] || []).push(it); });
-  var filtering = !!(S.q || S.type !== 'all' || Object.keys(S.stagesOff).some(function (k) { return S.stagesOff[k]; }));
+  var filtering = !!(S.q || S.type !== 'all' || S.cat !== 'all' || Object.keys(S.stagesOff).some(function (k) { return S.stagesOff[k]; }));
   var visible = S.seasons.filter(function (s) { return !filtering || (bySeason[s.label] || []).length; });
   if (S.seasons.length > 1) h += '<nav class="jump" aria-label="시즌 바로가기"><span class="sub">시즌</span>' + visible.map(function (s) {
     return '<a href="#" data-jump="' + esc(s.label) + '">' + esc(s.label) + '<span>' + (bySeason[s.label] || []).length + '</span></a>'; }).join('') + '</nav>';
@@ -236,14 +289,16 @@ function showDetail(id) {
   var season = S.seasons.filter(function (s) { return s.label === it._season; })[0] || {};
   var n = stageNo(it.stage), steps = (season.stages || []).filter(function (st) { return stageNo(st) !== 8; });
   var d = $('#detail');
+  d.classList.toggle('wide', !!it.detail);
   d.innerHTML = '<div class="dh"><div><div class="sub" style="color:#C9CEE0">' + esc(it._season) + ' · ' + esc(it.tab === '드랍' ? '드랍' : it.type) + '</div><h2 id="dtitle">' + esc(title(it)) + '</h2>' +
-    '<div class="mono" style="margin-top:4px">' + esc(it.code ? it.code + (it.color ? '_' + it.color : '') : '품번 미부여') + '</div></div><button class="x" aria-label="닫기">×</button></div><div class="db">' +
+    '<div class="mono" style="margin-top:4px">' + esc(it.code ? it.code + (it.color ? (it.color.indexOf(',') >= 0 ? '  ·  ' + it.color.replace(/,\s*/g, ' · ') : '_' + it.color) : '') : '품번 미부여') + '</div></div><button class="x" aria-label="닫기">×</button></div><div class="db">' +
     (n && n !== 8 ? '<div class="steps" aria-label="진행 단계">' + steps.map(function (st) { return '<i class="' + (stageNo(st) <= n ? 'on' : '') + '" title="' + esc(st) + '"></i>'; }).join('') + '</div>' : '') +
     FIELD_LABEL.map(function (f) { var v = it[f[0]]; if (f[0] === 'season') v = v || it._season; return '<div class="kv"><span>' + f[1] + '</span><span>' + (f[0] === 'color' ? colorChip(v) : f[0] === 'stage' ? '<span class="chip" style="' + stageStyle(v) + '">' + esc(v || '미지정') + '</span>' : esc(v || '–')) + '</span></div>'; }).join('') +
-    '<div class="foot">' + (season.sheetUrl ? '<a class="btn" href="' + esc(season.sheetUrl) + '" target="_blank" rel="noopener">진행현황 시트 열기</a>' : '') +
-    '<button class="btn" id="copyid">품번_컬러 복사</button></div><p class="sub" style="margin:12px 0 0">수정은 시트에서 하고, Claude에게 최신화를 요청하면 이 화면에 반영돼요.</p></div>';
+    (it.detail ? detailHtml(it) : '') +
+    '<div class="foot">' + (season.sheetUrl && !it.detail ? '<a class="btn" href="' + esc(season.sheetUrl) + '" target="_blank" rel="noopener">진행현황 시트 열기</a>' : '') +
+    '<button class="btn" id="copyid">품번 복사</button></div><p class="sub" style="margin:12px 0 0">수정은 시트에서 하고, Claude에게 최신화를 요청하면 이 화면에 반영돼요.</p></div>';
   $('.x', d).onclick = function () { d.close(); };
-  $('#copyid', d).onclick = function () { var t = it.code ? it.code + (it.color ? '_' + it.color : '') : title(it); if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { $('#copyid', d).textContent = '복사됨'; }); };
+  $('#copyid', d).onclick = function () { var t = it.code ? it.code + (it.color && it.color.indexOf(',') < 0 ? '_' + it.color : '') : title(it); if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { $('#copyid', d).textContent = '복사됨'; }); };
   d.onclick = function (e) { if (e.target === d) d.close(); };
   if (d.showModal) d.showModal(); else d.setAttribute('open', '');
 }
@@ -257,7 +312,8 @@ function bind() {
     if (b.tagName === 'TR') b.onkeydown = function (e) { if (e.key === 'Enter') showDetail(b.dataset.id); };
   });
   $$('[data-jump]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var el = document.getElementById('s-' + a.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth' }); }; });
-  var r = $('#reset'); if (r) r.onclick = function () { S.q = ''; S.type = 'all'; S.stagesOff = {}; $('#q').value = ''; render(); };
+  var cs = $('#cat'); if (cs) cs.onchange = function () { S.cat = cs.value; render(); };
+  var r = $('#reset'); if (r) r.onclick = function () { S.q = ''; S.type = 'all'; S.cat = 'all'; S.stagesOff = {}; $('#q').value = ''; render(); };
 }
 
 /* ---------- 전역 이벤트 ---------- */
