@@ -1,6 +1,6 @@
 {
  "v": 1,
- "updated": "2026-10-29 18:32",
+ "updated": "2026-10-29 20:00",
  "kdf": {
   "name": "PBKDF2-SHA256",
   "salt": "6eN9ykFh0I+cdixiXmPojg==",
@@ -8,14 +8,19 @@
  },
  "check": {
   "v": 1,
-  "iv": "+lppepOt+2W76Q7f",
-  "ct": "Ce5JV9jK3xJc6T9eal/nUEOsOGB+TXXJhtfHvw=="
+  "iv": "n6em6RlnVqBwVZB9",
+  "ct": "GLn6I871PyWl4fVi3chTRQrW26w9g4OTZ+qeTg=="
  },
  "seasons": [
   {
    "label": "27SS",
    "file": "data/seasons/27SS.json",
-   "updated": "2026-10-29 18:32"
+   "updated": "2026-10-29 20:00"
+  },
+  {
+   "label": "26FW",
+   "file": "data/seasons/26FW.json",
+   "updated": "2026-10-29 20:00"
   }
  ]
 }
