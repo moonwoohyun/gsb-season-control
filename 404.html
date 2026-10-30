@@ -233,7 +233,8 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
         for (var si = 0; si < 4; si++) {
           var vals = QK.map(function (key) { var s = q.stages[key]; var v = s ? s.sizes[si] : null; return v == null ? '' : v; });
           if (vals.every(function (v) { return v === ''; })) continue;
-          T['15_이동수량'].push([pid, q.color, si + 1].concat(vals).concat([I.wash || '있음', '', '', '', '', '', '', '', '', '']));
+          var dv = q.diff && q.diff.sizes ? q.diff.sizes[si] : null;
+          T['15_이동수량'].push([pid, q.color, si + 1].concat(vals).concat([I.wash || '있음', '', '', '', '', '', dv ? (dv > 0 ? '3PL 부족 ' : '3PL 초과 ') + Math.abs(dv) : '', '', '', '']));
         }
       });
       (D.barcodes || []).forEach(function (b) { T['30_바코드마스터'].push([b.kind || '신규', pid, b.color, b.size, b.barcode, b.date, b.memo, '', '']); });
@@ -405,23 +406,24 @@ function stageIdx(p) { return S.data.settings.stages.indexOf(p['현재 단계'])
 /* ---------- 홈 ---------- */
 function viewHome() {
   var d = S.data, P = d.products;
-  var ing = P.filter(function (p) { return p['상태'] !== '드랍'; }).length;
+  var done = P.filter(function (p) { return p['상태'] !== '드랍' && p['현재 단계'] === '종결'; }).length;
+  var ing = P.filter(function (p) { return p['상태'] !== '드랍' && p['현재 단계'] !== '종결'; }).length;
   var holdN = P.filter(function (p) { return p['상태'] === '보류'; }).length;
   var drop = P.filter(function (p) { return p['상태'] === '드랍'; }).length;
   var diff = d.insp.filter(function (r) { return r['상태'] === '부족' || r['상태'] === '초과'; }).length;
   var shortRows = 0; Object.keys(d.moves).forEach(function (k) { d.moves[k].forEach(function (r) { if (r['부족 · 초과 요약']) shortRows++; }); });
   var cats = d.settings.cats.concat(['미분류']);
   var html = title('RENACTS · ' + S.season, '시즌 자료 관제탑', '시트에 입력된 내용을 보기 쉽게 보여줍니다. 수정은 시트에서 합니다.');
-  html += '<div class="stats"><div class="stat"><div class="l">진행 중 제품' + (holdN ? ' <span class="chip warn">보류 ' + holdN + ' 포함</span>' : '') + '</div><div class="v mono">' + ing + '</div></div><div class="stat"><div class="l">드랍</div><div class="v mono">' + drop + '</div></div>' +
-    '<div class="stat"><div class="l">수량 부족·초과 확인 필요</div><div class="v mono">' + shortRows + '</div></div><div class="stat"><div class="l">3PL 수량 차이 (바코드)</div><div class="v mono">' + diff + '</div></div></div>';
+  html += '<div class="stats" style="grid-template-columns:repeat(3,1fr)"><div class="stat"><div class="l">진행 중 제품' + (holdN ? ' <span class="chip warn">보류 ' + holdN + ' 포함</span>' : '') + '</div><div class="v mono">' + ing + '</div></div><div class="stat"><div class="l">드랍</div><div class="v mono">' + drop + '</div></div>' +
+    '<div class="stat"><div class="l">완료 (종결)</div><div class="v mono">' + done + '</div></div></div>';
   html += '<div class="card menu"><details class="l1" open><summary>시즌 ' + esc(S.season) + '</summary><div class="inner">' +
     '<a class="item" href="#/board"><span>시즌 진행 현황</span><span class="arr">보드로 이동 →</span></a>' +
-    '<details><summary>아이템별 구분</summary><div class="inner">' + cats.map(function (c) {
+    '<details><summary>아이템별 구분 <span class="chip ' + (shortRows ? 'warn' : 'gray') + '">수량 부족·초과 ' + shortRows + '</span></summary><div class="inner">' + cats.map(function (c) {
       var list = P.filter(function (p) { return (p['카테고리'] || '미분류') === c; });
       return '<details><summary>' + esc(c) + ' <span class="chip gray">' + list.length + '개</span></summary><div class="inner">' +
         (list.length ? list.map(function (p) { return '<a class="item" href="#/p/' + encodeURIComponent(pid(p)) + '"><span>' + esc(p['기획명'] || pid(p)) + ' <span class="mono sub">' + esc(pid(p)) + '</span>' + (p['상태'] === '보류' ? ' <span class="chip warn">보류</span>' : p['상태'] === '드랍' ? ' <span class="chip bad">드랍</span>' : '') + '</span><span class="arr">상세 →</span></a>'; }).join('') : '<div class="empty">이 카테고리로 지정된 제품이 없어요</div>') +
         '</div></details>'; }).join('') + '</div></details></div></details>' +
-    '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/inbound"><span>3PL 입고 검수 비교</span><span class="arr">→</span></a>' +
+    '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/inbound"><span>3PL 입고 검수 비교 <span class="chip ' + (diff ? 'warn' : 'gray') + '" style="font-size:13px;vertical-align:middle">수량 차이 ' + diff + '</span></span><span class="arr">→</span></a>' +
     '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/barcode"><span>바코드 시스템 마스터</span><span class="arr">기존 · 신규 →</span></a>' +
     '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/archive"><span>패킹리스트 보관함</span><span class="arr">엑셀 보관함 →</span></a></div>';
   return html;
