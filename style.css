@@ -165,3 +165,5 @@ table.qt tbody tr{cursor:default}
   .tablewrap td.c-recent:empty,.tablewrap td.c-memo:empty,.tablewrap td.c-status:empty,.tablewrap td.c-upd:empty{display:none}
   .tablewrap td.c-memo{color:#8A3A12}
 }
+.jump.addr{position:static;border-bottom:0;margin-bottom:6px;padding:0}
+.jump a.on{background:var(--navy);color:#fff;border-color:var(--navy)}

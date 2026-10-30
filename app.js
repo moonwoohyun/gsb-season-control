@@ -8,6 +8,15 @@
 var KEY_STORE = 'renacts.key';
 var PW_STORE = 'renacts.pw';
 var API = (window.SITE_CONFIG && window.SITE_CONFIG.api) || '';
+/* 시즌 주소: …/27SS 처럼 끝에 시즌을 붙이면 그 시즌만 보여준다 (?s=27SS 도 가능) */
+var SEASON_RE = /^\d{2}(SS|FW)$/i;
+var PATH_SEGS = location.pathname.replace(/\/+$/, '').split('/');
+var PATH_SEASON = SEASON_RE.test(PATH_SEGS[PATH_SEGS.length - 1] || '') ? PATH_SEGS[PATH_SEGS.length - 1] : '';
+var SEASON_LOCK = (PATH_SEASON || new URLSearchParams(location.search).get('s') || '').toUpperCase();
+if (!SEASON_RE.test(SEASON_LOCK)) SEASON_LOCK = '';
+var SITE_ROOT = PATH_SEASON ? PATH_SEGS.slice(0, -1).join('/') + '/' : location.pathname.replace(/[^/]*$/, '');
+if (SEASON_LOCK) document.title = '리넥츠 ' + SEASON_LOCK + ' 관제탑';
+(function () { var br = document.querySelector('.brand'); if (br) { br.setAttribute('href', SITE_ROOT + (SEASON_LOCK || '')); if (SEASON_LOCK) br.textContent = '리넥츠 ' + SEASON_LOCK + ' 관제탑'; } })();
 var COLORS = { GN:['#2F5D43','#fff'], NV:['#2A3560','#fff'], BE:['#D9C3A0','#2A2218'], BG:['#D9C3A0','#2A2218'], LBU:['#BCD0E6','#1B2A3D'], BK:['#1E1E1E','#fff'], BL:['#1E1E1E','#fff'], DBL:['#22304F','#fff'], WH:['#F2F0EA','#2A2A28'], IV:['#EFE8D6','#2A2A28'], GR:['#8C8C88','#fff'], CH:['#4A4A48','#fff'], BR:['#6B4A2E','#fff'], KH:['#7A7350','#fff'], RED:['#8E2A25','#fff'], 'RED MULTI':['#8E2A25','#fff'], 'GREEN MULTI':['#2F5D43','#fff'], 'WHITE MULTI':['#ECEAE2','#2A2A28'], 'ORANGE MULTI':['#E0954F','#2A1A0A'], NAVY:['#2A3560','#fff'], BEIGE:['#D9C3A0','#2A2218'], 'BLUE STRIPE':['#9DB4D6','#1B2A3D'], BLUE:['#3D5A99','#fff'], BLACK:['#1E1E1E','#fff'], WHITE:['#F2F0EA','#2A2A28'], GREEN:['#2F5D43','#fff'] };
 var FIELD_LABEL = [['season','시즌'],['type','구분'],['code','품번'],['color','컬러'],['name','아이템명 (영문)'],['plan','기획명'],['stage','현재 단계'],['status','상태'],['updated','업데이트 날짜'],['recent','최근 내용'],['memo','메모']];
 
@@ -108,6 +117,8 @@ function open(key) {
 }
 
 function setSeasons(list) {
+  S.seasonLabels = list.map(function (x) { return x.label; });
+  if (SEASON_LOCK) list = list.filter(function (x) { return String(x.label).toUpperCase() === SEASON_LOCK; });
   S.seasons = list;
   S.all = [];
   list.forEach(function (s) { (s.items || []).forEach(function (it, i) { it._id = s.label + ':' + (it.code || i); it._season = s.label; it._hay = hay(it); S.all.push(it); }); });
@@ -149,7 +160,7 @@ function writeHash() {
   if (S.type !== 'all') p.push('t=' + encodeURIComponent(S.type));
   if (S.cat !== 'all') p.push('c=' + encodeURIComponent(S.cat));
   p.push('v=' + S.view);
-  history.replaceState(null, '', '#' + p.join('&'));
+  history.replaceState(null, '', location.pathname + location.search + '#' + p.join('&'));
 }
 
 /* ---------- 검색 ---------- */
@@ -237,7 +248,7 @@ function detailHtml(it) {
   // 히스토리
   h += '<h3 class="dsec">히스토리 <span class="sub">' + (D.history || []).length + '건</span></h3>';
   h += (D.history || []).length ? '<table class="qt"><tbody>' + D.history.slice().reverse().map(function (r, i) {
-    return '<tr' + (i === 0 ? ' class="latest"' : '') + '><td class="mono nowrap">' + esc(r.date) + '</td><td>' + (r.color ? colorChip(r.color) : '<span class="sub">전체</span>') + '</td><td><span class="chip" style="' + stageStyle(r.stage) + '">' + esc(r.stage) + '</span></td><td>' + esc(r.text) + (r.link ? ' <a href="' + esc(r.link) + '" target="_blank" rel="noopener">첨부</a>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="empty">기록이 없어요.</p>';
+    return '<tr' + (i === 0 ? ' class="latest"' : '') + '><td class="mono nowrap">' + esc(r.date) + '</td><td>' + (r.color ? colorChip(r.color) : '<span class="sub">전체</span>') + '</td><td><span class="chip" style="' + stageStyle(r.stage) + '">' + esc(r.stage) + '</span></td><td>' + esc(r.text) + (r.link ? ' <a href="' + esc(r.link) + '" target="_blank" rel="noopener">첨부</a>' : '') + (r.by ? ' <span class="sub">· ' + esc(r.by) + '</span>' : '') + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="empty">기록이 없어요.</p>';
   // 3PL
   var T = D.tpl || { rows: [] };
   h += '<h3 class="dsec">3PL 검수' + (T.date ? ' <span class="sub">' + esc(T.date) + (T.vendor ? ' · ' + esc(T.vendor) : '') + '</span>' : '') + '</h3>';
@@ -273,9 +284,14 @@ function render() {
   var bySeason = {}; shown.forEach(function (it) { (bySeason[it._season] = bySeason[it._season] || []).push(it); });
   var filtering = !!(S.q || S.type !== 'all' || S.cat !== 'all' || Object.keys(S.stagesOff).some(function (k) { return S.stagesOff[k]; }));
   var visible = S.seasons.filter(function (s) { return !filtering || (bySeason[s.label] || []).length; });
-  if (S.seasons.length > 1) h += '<nav class="jump" aria-label="시즌 바로가기"><span class="sub">시즌</span>' + visible.map(function (s) {
+  var labels = S.seasonLabels || [];
+  if (SEASON_LOCK || labels.length > 1) h += '<nav class="jump addr" aria-label="시즌 주소"><span class="sub">시즌 주소</span>' +
+    '<a href="' + esc(SITE_ROOT) + '"' + (SEASON_LOCK ? '' : ' class="on"') + '>전체</a>' +
+    labels.map(function (l) { return '<a href="' + esc(SITE_ROOT + l) + '"' + (String(l).toUpperCase() === SEASON_LOCK ? ' class="on"' : '') + '>' + esc(l) + '</a>'; }).join('') + '</nav>';
+  if (SEASON_LOCK && !S.seasons.length) h += '<div class="emptyall"><h2>' + esc(SEASON_LOCK) + ' 시즌 데이터가 아직 없어요</h2><p>공유 드라이브에 「0_사이트 데이터_' + esc(SEASON_LOCK) + '」 폴더를 만들고 제품 시트를 넣은 뒤 [최신화]를 누르세요.</p></div>';
+  if (!SEASON_LOCK && S.seasons.length > 1) h += '<nav class="jump" aria-label="시즌 바로가기"><span class="sub">시즌</span>' + visible.map(function (s) {
     return '<a href="#" data-jump="' + esc(s.label) + '">' + esc(s.label) + '<span>' + (bySeason[s.label] || []).length + '</span></a>'; }).join('') + '</nav>';
-  if (!visible.length) h += '<div class="emptyall"><h2>찾는 결과가 없어요</h2><p>품번, 컬러코드(예: NV), 기획명, 최근 내용으로 검색할 수 있어요. 여러 단어는 모두 포함된 건만 보여줘요.</p></div>';
+  if (!visible.length && !(SEASON_LOCK && !S.seasons.length)) h += '<div class="emptyall"><h2>찾는 결과가 없어요</h2><p>품번, 컬러코드(예: NV), 기획명, 최근 내용으로 검색할 수 있어요. 여러 단어는 모두 포함된 건만 보여줘요.</p></div>';
   visible.forEach(function (s) { h += seasonBlock(s, bySeason[s.label] || [], filtering); });
   $('#app').innerHTML = h;
   bind();
