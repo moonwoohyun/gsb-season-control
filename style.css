@@ -125,7 +125,21 @@ table.qt tbody tr{cursor:default}
 .codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .code{background:#F6F5F0;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px}
 .catsel{font:inherit;font-size:13px;min-height:40px;padding:0 10px;border:1px solid #CFCCC0;border-radius:8px;background:#fff;color:var(--ink)}
-.kcard .kt>span:last-child{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.kcard .kchips{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.kcard{position:relative}
+.kcard .kcol{display:flex;gap:4px;flex-wrap:wrap}
+.kcard .kmorebox{display:none;flex-direction:column;gap:6px}
+.kcard.open .kmorebox{display:flex}
+.kcard.open{border-color:var(--navy)}
+.kcard:not(.open)::after{content:'▾';position:absolute;right:10px;bottom:6px;font-size:10px;color:var(--mute)}
+.kcard .kmore{align-self:flex-end;background:none;border:0;color:var(--navy);font-weight:700;font-size:12px;cursor:pointer;padding:4px 0}
+.kcard:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.lnk.refresh{background:#fff;color:var(--navy);border-color:#fff;font-weight:700}
+.lnk.refresh.busy{opacity:.75;cursor:progress}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:all .2s;z-index:50;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.bad{background:var(--bad-t)}
+.shead .meta .chip{font-family:inherit;margin-left:4px}
 
 @media (max-width:720px){
   .wrap{padding:16px 16px 80px}

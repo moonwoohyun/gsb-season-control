@@ -6,10 +6,12 @@
 'use strict';
 
 var KEY_STORE = 'renacts.key';
-var COLORS = { GN:['#2F5D43','#fff'], NV:['#2A3560','#fff'], BE:['#D9C3A0','#2A2218'], BG:['#D9C3A0','#2A2218'], LBU:['#BCD0E6','#1B2A3D'], BK:['#1E1E1E','#fff'], BL:['#1E1E1E','#fff'], DBL:['#22304F','#fff'], WH:['#F2F0EA','#2A2A28'], IV:['#EFE8D6','#2A2A28'], GR:['#8C8C88','#fff'], CH:['#4A4A48','#fff'], BR:['#6B4A2E','#fff'], KH:['#7A7350','#fff'], RED:['#8E2A25','#fff'], 'RED MULTI':['#8E2A25','#fff'], 'GREEN MULTI':['#2F5D43','#fff'], 'WHITE MULTI':['#ECEAE2','#2A2A28'], 'ORANGE MULTI':['#E0954F','#2A1A0A'] };
+var PW_STORE = 'renacts.pw';
+var API = (window.SITE_CONFIG && window.SITE_CONFIG.api) || '';
+var COLORS = { GN:['#2F5D43','#fff'], NV:['#2A3560','#fff'], BE:['#D9C3A0','#2A2218'], BG:['#D9C3A0','#2A2218'], LBU:['#BCD0E6','#1B2A3D'], BK:['#1E1E1E','#fff'], BL:['#1E1E1E','#fff'], DBL:['#22304F','#fff'], WH:['#F2F0EA','#2A2A28'], IV:['#EFE8D6','#2A2A28'], GR:['#8C8C88','#fff'], CH:['#4A4A48','#fff'], BR:['#6B4A2E','#fff'], KH:['#7A7350','#fff'], RED:['#8E2A25','#fff'], 'RED MULTI':['#8E2A25','#fff'], 'GREEN MULTI':['#2F5D43','#fff'], 'WHITE MULTI':['#ECEAE2','#2A2A28'], 'ORANGE MULTI':['#E0954F','#2A1A0A'], NAVY:['#2A3560','#fff'], BEIGE:['#D9C3A0','#2A2218'], 'BLUE STRIPE':['#9DB4D6','#1B2A3D'], BLUE:['#3D5A99','#fff'], BLACK:['#1E1E1E','#fff'], WHITE:['#F2F0EA','#2A2A28'], GREEN:['#2F5D43','#fff'] };
 var FIELD_LABEL = [['season','시즌'],['type','구분'],['code','품번'],['color','컬러'],['name','아이템명 (영문)'],['plan','기획명'],['stage','현재 단계'],['status','상태'],['updated','업데이트 날짜'],['recent','최근 내용'],['memo','메모']];
 
-var S = { manifest: null, key: null, seasons: [], q: '', type: 'all', cat: 'all', view: null, stagesOff: {}, all: [] };
+var S = { manifest: null, key: null, pw: '', seasons: [], q: '', type: 'all', cat: 'all', view: null, stagesOff: {}, all: [], open: {} };
 var QLABEL = [['order','작업 지시'],['cut','재단 수량'],['wash','워싱처 입고'],['finish','완성집 입고'],['store','수납용 입고'],['tpl','3PL 입고']];
 
 function $(s, el) { return (el || document).querySelector(s); }
@@ -42,8 +44,21 @@ function getJSON(url) {
 }
 
 /* ---------- 시작 ---------- */
+function api(action, pw) {
+  return fetch(API, { method: 'POST', body: JSON.stringify({ action: action, pw: pw }), redirect: 'follow' })
+    .then(function (r) { if (!r.ok) throw new Error('서버 응답 ' + r.status); return r.json(); })
+    .then(function (j) { if (!j.ok) { var e = new Error(j.error || '알 수 없는 오류'); e.server = true; throw e; } return j.data; });
+}
+
 function start() {
   readHash();
+  if (API) {
+    var pw = sget(PW_STORE);
+    if (!pw) return showLock();
+    $('#app').innerHTML = '<p class="empty">불러오는 중…</p>';
+    return api('get', pw).then(function (data) { S.pw = pw; useData(data); })
+      .catch(function (e) { if (e.server) sdel(PW_STORE); showLock(e.message); });
+  }
   getJSON('data/manifest.json').then(function (m) {
     S.manifest = m;
     $('#updated').textContent = '최신화 ' + (m.updated || '');
@@ -62,7 +77,7 @@ function start() {
 }
 
 function showLock(msg) {
-  $('#q').disabled = true; $('#lock').hidden = true;
+  $('#q').disabled = true; $('#lock').hidden = true; $('#refresh').hidden = true;
   $('#app').innerHTML = '<div class="card lockcard"><h1>리넥츠 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
     '<form id="lockf"><input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password" aria-label="비밀번호" required>' +
     '<label class="rem"><input type="checkbox" id="rem" checked> 이 기기에서 기억하기</label>' +
@@ -72,6 +87,10 @@ function showLock(msg) {
     ev.preventDefault();
     var pw = $('#pw').value, rem = $('#rem').checked, btn = $('#lockf button');
     btn.disabled = true; btn.textContent = '여는 중…';
+    if (API) {
+      return api('get', pw).then(function (data) { S.pw = pw; sset(PW_STORE, pw, rem); useData(data); })
+        .catch(function (e) { btn.disabled = false; btn.textContent = '열기'; $('#err').textContent = e.message; $('#pw').select(); });
+    }
     deriveKey(pw, S.manifest.kdf).then(function (k) {
       return decrypt(k, S.manifest.check).then(function () {
         return crypto.subtle.exportKey('raw', k).then(function (raw) { sset(KEY_STORE, S.manifest.kdf.salt + '.' + u2b(raw), rem); return open(k); });
@@ -85,13 +104,37 @@ function open(key) {
   $('#app').innerHTML = '<p class="empty">불러오는 중…</p>';
   return Promise.all(S.manifest.seasons.map(function (s) {
     return getJSON(s.file).then(function (box) { return decrypt(key, box); }).catch(function (e) { return { label: s.label, error: e.message, items: [], stages: [] }; });
-  })).then(function (list) {
-    S.seasons = list;
-    S.all = [];
-    list.forEach(function (s) { (s.items || []).forEach(function (it, i) { it._id = s.label + ':' + i; it._season = s.label; it._hay = hay(it); S.all.push(it); }); });
-    $('#q').disabled = false; $('#q').value = S.q; $('#lock').hidden = false;
-    render();
-  });
+  })).then(function (list) { setSeasons(list); });
+}
+
+function setSeasons(list) {
+  S.seasons = list;
+  S.all = [];
+  list.forEach(function (s) { (s.items || []).forEach(function (it, i) { it._id = s.label + ':' + (it.code || i); it._season = s.label; it._hay = hay(it); S.all.push(it); }); });
+  $('#q').disabled = false; $('#q').value = S.q; $('#lock').hidden = false; $('#refresh').hidden = !API;
+  render();
+}
+
+function useData(data) {
+  $('#updated').textContent = '최신화 ' + (data.updated || '');
+  S.errors = data.errors || [];
+  setSeasons(data.seasons || []);
+}
+
+function refresh() {
+  var b = $('#refresh');
+  b.disabled = true; b.classList.add('busy'); b.textContent = '공유 드라이브에서 읽는 중…';
+  api('refresh', S.pw).then(function (data) {
+    useData(data);
+    toast('최신화 완료 · 제품 파일 ' + (data.files || 0) + '개' + (data.errors && data.errors.length ? ' · 읽지 못한 파일 ' + data.errors.length + '개' : ''));
+  }).catch(function (e) { toast('최신화 실패: ' + e.message, true); })
+    .then(function () { b.disabled = false; b.classList.remove('busy'); b.textContent = '최신화'; });
+}
+
+function toast(msg, bad) {
+  var t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+  t.textContent = msg; t.className = 'toast show' + (bad ? ' bad' : '');
+  clearTimeout(t._h); t._h = setTimeout(function () { t.className = 'toast'; }, 5000);
 }
 
 /* ---------- 상태 · 주소 ---------- */
@@ -151,13 +194,16 @@ function title(it) { return it.plan || it.name || it.code || '(이름 없음)'; 
 function md(d) { var m = /^\d{4}-(\d\d)-(\d\d)/.exec(d || ''); return m ? m[1] + '/' + m[2] : (d || ''); }
 
 function card(it) {
-  return '<button class="kcard" style="--kc:' + stageColor(it.stage) + '" data-id="' + esc(it._id) + '">' +
-    '<span class="kt"><span class="kc mono">' + codeText(it) + (it.round ? ' <span class="chip gray">' + hl(it.round) + '</span>' : '') + '</span><span>' + colorChip(it.color) + '</span></span>' +
-    (it.category ? '<span class="ke">' + hl(it.category) + '</span>' : '') +
+  var open = S.open[it._id] || (S.q && (norm(it.recent).indexOf(norm(S.q)) >= 0 || norm(it.memo).indexOf(norm(S.q)) >= 0));
+  return '<div class="kcard' + (open ? ' open' : '') + '" style="--kc:' + stageColor(it.stage) + '" data-card="' + esc(it._id) + '" role="button" tabindex="0" aria-expanded="' + !!open + '">' +
+    '<span class="kt"><span class="kc mono">' + codeText(it) + '</span><span class="kchips">' + (it.status === '보류' ? '<span class="chip warn">보류</span>' : '') + (it.round ? '<span class="chip gray">' + hl(it.round) + '</span>' : '') + '</span></span>' +
     '<span class="kn">' + hl(title(it)) + '</span>' +
+    '<span class="kcol">' + colorChip(it.color) + '</span>' +
+    '<span class="kmorebox">' +
     (it.name && it.plan ? '<span class="ke">' + hl(it.name) + '</span>' : '') +
     (it.recent || it.updated ? '<span class="kstat">' + (it.updated ? '<b>' + esc(md(it.updated)) + '</b> · ' : '') + hl(it.recent || '내용 없음') + '</span>' : '') +
-    (it.memo ? '<span class="kflag">' + hl(it.memo) + '</span>' : '') + '</button>';
+    (it.memo ? '<span class="kflag">' + hl(it.memo) + '</span>' : '') +
+    '<button class="kmore" data-id="' + esc(it._id) + '">상세 보기 →</button></span></div>';
 }
 
 function catSelect() {
@@ -239,11 +285,10 @@ function seasonBlock(s, items, filtering) {
   var all = S.all.filter(function (it) { return it._season === s.label; });
   var cnt = function (f) { return all.filter(f).length; };
   var h = '<section class="season" id="s-' + esc(s.label) + '"><div class="shead"><h1>' + esc(s.label) + '</h1><div class="meta">' +
-    '<span>진행<b>' + cnt(function (it) { return it.tab !== '드랍' && it.status !== '보류' && stageNo(it.stage) !== 7; }) + '</b></span>' +
-    '<span>보류<b>' + cnt(function (it) { return it.status === '보류'; }) + '</b></span>' +
+    '<span>진행<b>' + cnt(function (it) { return it.tab !== '드랍' && it.status !== '드랍' && stageNo(it.stage) !== 7; }) + '</b> <span class="chip warn">보류 ' + cnt(function (it) { return it.status === '보류'; }) + ' 포함</span></span>' +
     '<span>종결<b>' + cnt(function (it) { return stageNo(it.stage) === 7; }) + '</b></span>' +
     '<span>드랍<b>' + cnt(function (it) { return it.tab === '드랍'; }) + '</b></span></div>' +
-    '<span class="upd2">시트 반영 ' + esc(s.updated || '') + (s.sheetUrl ? ' · <a href="' + esc(s.sheetUrl) + '" target="_blank" rel="noopener">시트 열기</a>' : '') + '</span></div>';
+    '<span class="upd2">' + (API ? '공유 드라이브 반영 ' : '시트 반영 ') + esc(s.updated || '') + (s.sheetUrl ? ' · <a href="' + esc(s.sheetUrl) + '" target="_blank" rel="noopener">시트 열기</a>' : '') + '</span></div>';
   if (s.error) return h + '<div class="card">이 시즌 파일을 열지 못했어요: ' + esc(s.error) + '</div></section>';
   if (!items.length) return h + '<div class="empty">' + (filtering ? '조건에 맞는 건이 없어요.' : '아직 등록된 건이 없어요.') + '</div></section>';
   return h + (S.view === 'list' ? listView(items) : boardView(s, items)) + '</section>';
@@ -251,7 +296,7 @@ function seasonBlock(s, items, filtering) {
 
 function boardView(s, items) {
   var stages = (s.stages || []).filter(function (st) { return stageNo(st) !== 8; });
-  var onBoard = function (it) { return it.tab !== '드랍' && it.status !== '보류' && it.status !== '드랍' && stages.indexOf(stageLabel(it.stage)) >= 0; };
+  var onBoard = function (it) { return it.tab !== '드랍' && it.status !== '드랍' && stages.indexOf(stageLabel(it.stage)) >= 0; };
   var main = items.filter(onBoard), rest = items.filter(function (it) { return !onBoard(it); });
   var rows = ['신규', '리오더'].filter(function (r) { return main.some(function (it) { return it.type === r; }) || (!S.q && (S.type === 'all' || S.type === r)); });
   var h = '';
@@ -267,9 +312,9 @@ function boardView(s, items) {
     h += '</div>';
   }
   if (rest.length) {
-    h += '<details class="extra"' + (S.q || S.type === '드랍' || !main.length ? ' open' : '') + '><summary>보류 · 드랍 · 단계 미지정 <span class="chip gray">' + rest.length + '</span></summary><div class="hold">' +
+    h += '<details class="extra"' + (S.q || S.type === '드랍' || !main.length ? ' open' : '') + '><summary>드랍 · 단계 미지정 <span class="chip gray">' + rest.length + '</span></summary><div class="hold">' +
       rest.map(function (it) {
-        var tag = it.tab === '드랍' || it.status === '드랍' ? ['드랍','bad'] : it.status === '보류' ? ['보류','warn'] : ['단계 확인','gray'];
+        var tag = it.tab === '드랍' || it.status === '드랍' ? ['드랍','bad'] : ['단계 확인','gray'];
         return '<button class="hitem" data-id="' + esc(it._id) + '"><span class="chip ' + tag[1] + '">' + tag[0] + '</span><span class="mono">' + codeText(it) + '</span><b>' + hl(title(it)) + '</b>' + (it.memo ? '<span class="sub">' + hl(it.memo) + '</span>' : '') + '</button>'; }).join('') + '</div></details>';
   }
   return h;
@@ -295,8 +340,8 @@ function showDetail(id) {
     (n && n !== 8 ? '<div class="steps" aria-label="진행 단계">' + steps.map(function (st) { return '<i class="' + (stageNo(st) <= n ? 'on' : '') + '" title="' + esc(st) + '"></i>'; }).join('') + '</div>' : '') +
     FIELD_LABEL.map(function (f) { var v = it[f[0]]; if (f[0] === 'season') v = v || it._season; return '<div class="kv"><span>' + f[1] + '</span><span>' + (f[0] === 'color' ? colorChip(v) : f[0] === 'stage' ? '<span class="chip" style="' + stageStyle(v) + '">' + esc(v || '미지정') + '</span>' : esc(v || '–')) + '</span></div>'; }).join('') +
     (it.detail ? detailHtml(it) : '') +
-    '<div class="foot">' + (season.sheetUrl && !it.detail ? '<a class="btn" href="' + esc(season.sheetUrl) + '" target="_blank" rel="noopener">진행현황 시트 열기</a>' : '') +
-    '<button class="btn" id="copyid">품번 복사</button></div><p class="sub" style="margin:12px 0 0">수정은 시트에서 하고, Claude에게 최신화를 요청하면 이 화면에 반영돼요.</p></div>';
+    '<div class="foot">' + (it.url ? '<a class="btn" href="' + esc(it.url) + '" target="_blank" rel="noopener">제품 시트 열기</a>' : '') + (season.sheetUrl && !it.detail ? '<a class="btn" href="' + esc(season.sheetUrl) + '" target="_blank" rel="noopener">진행현황 시트 열기</a>' : '') +
+    '<button class="btn" id="copyid">품번 복사</button></div><p class="sub" style="margin:12px 0 0">' + (API ? '수정은 제품 시트에서 하고, 위의 [최신화] 버튼을 누르면 이 화면에 반영돼요.' : '수정은 시트에서 하고, Claude에게 최신화를 요청하면 이 화면에 반영돼요.') + '</p></div>';
   $('.x', d).onclick = function () { d.close(); };
   $('#copyid', d).onclick = function () { var t = it.code ? it.code + (it.color && it.color.indexOf(',') < 0 ? '_' + it.color : '') : title(it); if (navigator.clipboard) navigator.clipboard.writeText(t).then(function () { $('#copyid', d).textContent = '복사됨'; }); };
   d.onclick = function (e) { if (e.target === d) d.close(); };
@@ -307,8 +352,13 @@ function bind() {
   $$('[data-type]').forEach(function (b) { b.onclick = function () { S.type = b.dataset.type; render(); }; });
   $$('[data-view]').forEach(function (b) { b.onclick = function () { S.view = b.dataset.view; render(); }; });
   $$('[data-stage]').forEach(function (b) { b.onclick = function () { var k = b.dataset.stage; S.stagesOff[k] = !S.stagesOff[k]; render(); }; });
+  $$('[data-card]').forEach(function (c) {
+    var toggle = function () { var k = c.dataset.card; S.open[k] = !c.classList.contains('open'); c.classList.toggle('open', S.open[k]); c.setAttribute('aria-expanded', S.open[k]); };
+    c.onclick = function (e) { if (e.target.closest('.kmore')) return; toggle(); };
+    c.onkeydown = function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); toggle(); } };
+  });
   $$('[data-id]').forEach(function (b) {
-    b.onclick = function () { showDetail(b.dataset.id); };
+    b.onclick = function (e) { e.stopPropagation(); showDetail(b.dataset.id); };
     if (b.tagName === 'TR') b.onkeydown = function (e) { if (e.key === 'Enter') showDetail(b.dataset.id); };
   });
   $$('[data-jump]').forEach(function (a) { a.onclick = function (e) { e.preventDefault(); var el = document.getElementById('s-' + a.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth' }); }; });
@@ -323,7 +373,8 @@ $('#q').addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.t
 document.addEventListener('keydown', function (e) {
   if (e.key === '/' && document.activeElement !== $('#q') && !$('#q').disabled && !$('#detail').open) { e.preventDefault(); $('#q').focus(); }
 });
-$('#lock').onclick = function () { sdel(KEY_STORE); S.key = null; S.all = []; S.seasons = []; showLock(); };
+$('#lock').onclick = function () { sdel(KEY_STORE); sdel(PW_STORE); S.key = null; S.pw = ''; S.all = []; S.seasons = []; showLock(); };
+$('#refresh').onclick = refresh;
 
 start();
 })();
