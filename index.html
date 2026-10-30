@@ -3,25 +3,642 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
 <title>리넥츠 시즌 관제탑</title>
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<style>:root{--bg:#F3F2ED;--ink:#1A1A18;--mute:#5C5B55;--line:#E3E1D8;--card:#fff;--navy:#1E2A4A;--soft:#E4E7F2;--warm:#FCEBDD;--warm-b:#B4532A;--warm-t:#6B2E10;--ok:#E0F0E6;--ok-t:#1D4A2E;--bad:#FBE0DD;--bad-t:#8E1F18;--amber:#FFF0D6;--amber-t:#7A4A00}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Noto Sans KR',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.5}
+a{color:var(--navy)}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:16px;background:var(--navy);color:#fff;padding:0 24px;min-height:56px;position:sticky;top:0;z-index:10}
+.top a{color:#fff;text-decoration:none}
+.brand{font-weight:700;font-size:17px;margin-right:8px}
+.topnav{display:flex;flex-wrap:wrap;gap:4px;flex:1}
+.topnav a{padding:10px 14px;border-radius:8px;font-size:14px;min-height:44px;display:flex;align-items:center}
+.topnav a:hover,.topnav a.on{background:rgba(255,255,255,.16)}
+.topright{display:flex;align-items:center;gap:12px;font-size:13px}
+.seasonsel{display:flex;align-items:center;gap:8px}
+select,input[type=search],input[type=text]{font:inherit;font-size:14px;min-height:40px;padding:0 12px;border:1px solid #CFCCC0;border-radius:8px;background:#fff;color:var(--ink)}
+.who{opacity:.85}
+.wrap{max-width:1440px;margin:0 auto;padding:28px 32px 80px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--mute)}
+h1{margin:4px 0 0;font-size:30px;font-weight:700}
+h2{font-size:17px;margin:0 0 12px}
+.sub{color:var(--mute);font-size:13px;margin-top:4px}
+.crumb{font-size:13px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;margin-bottom:20px}
+.btn{font:inherit;font-size:13px;font-weight:500;min-height:40px;padding:0 16px;border-radius:8px;border:1px solid #CFCCC0;background:#fff;color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+.btn:hover{filter:brightness(.97)}
+.seg{display:inline-flex;background:#fff;border:1px solid #CFCCC0;border-radius:8px;padding:3px;gap:2px;flex-wrap:wrap}
+.segb{font:inherit;font-size:13px;min-height:36px;padding:0 16px;border:0;border-radius:6px;background:transparent;color:var(--ink);cursor:pointer}
+.segb.on{background:var(--navy);color:#fff}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.stats{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0}
+.stat{flex:1 1 180px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px}
+.stat .l{font-size:13px;color:var(--mute)}.stat .v{font-size:32px;font-weight:500;line-height:1.2;margin-top:4px}
+.chip{font-size:11px;font-weight:700;border-radius:4px;padding:2px 8px;background:var(--soft);color:#2B3558;display:inline-block}
+.chip.warn{background:var(--warm);color:var(--warm-t)}.chip.ok{background:var(--ok);color:var(--ok-t)}.chip.bad{background:var(--bad);color:var(--bad-t)}.chip.amber{background:var(--amber);color:var(--amber-t)}.chip.gray{background:#E9E8E0;color:#4A4A45}
+.cc{font-size:11px;font-weight:700;border-radius:4px;padding:2px 8px;border:1px solid rgba(0,0,0,.12);display:inline-block;margin:0 4px 4px 0}
+/* board */
+.grid{display:grid;grid-template-columns:104px repeat(7,minmax(150px,1fr));gap:8px;margin-bottom:8px;min-width:1200px}
+.sh{background:var(--navy);color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.rl{background:#DCDFEA;color:var(--navy);border-radius:10px;padding:14px 12px;display:flex;flex-direction:column;justify-content:space-between;min-height:120px}
+.rl b{font-size:15px}.rl span{font-size:12px;color:#44507A}
+.col{background:#E9E8E0;border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:8px;min-height:120px}
+.dash{color:#6B6A62;text-align:center;padding-top:8px}
+.kcard{display:flex;flex-direction:column;gap:8px;background:#fff;border:1px solid #DAD8CD;border-radius:10px;padding:12px;text-decoration:none;color:inherit}
+.kcard:hover{border-color:var(--navy);box-shadow:0 0 0 2px rgba(30,42,74,.15)}
+.kcard{cursor:pointer;position:relative}
+.kcard .kstat,.kcard .kflag,.kcard .kmore{display:none}
+.kcard.open .kstat,.kcard.open .kflag{display:block}
+.kcard.open .kmore{display:block;font-size:12px;font-weight:700;text-align:right;text-decoration:none}
+.kcard:not(.open)::after{content:'▾';position:absolute;right:10px;bottom:8px;font-size:10px;color:var(--mute)}
+.kcard.open{border-color:var(--navy)}
+.kcard .kn{font-size:13px;font-weight:500;line-height:1.35}
+.kstat{border:1.5px solid var(--warm-b);background:var(--warm);border-radius:8px;padding:8px 10px;color:var(--warm-t);font-size:12px;line-height:1.4}
+.kflag{font-size:11px;color:#8A3A12;background:#FFF3E8;border-radius:6px;padding:4px 8px}
+.hold{display:flex;flex-wrap:wrap;gap:10px;background:#E3E4EC;border-radius:10px;padding:10px;margin-top:12px}
+.hitem{background:#fff;border:1px solid #DAD8CD;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:center}
+.scroll{overflow-x:auto}
+/* menu */
+.menu details{border-bottom:1px solid #D8D6CC}
+.menu summary{list-style:none;cursor:pointer;padding:14px 4px;font-size:18px;font-weight:500;display:flex;justify-content:space-between;min-height:48px;align-items:center}
+.menu summary::-webkit-details-marker{display:none}
+.menu summary::after{content:"▾";color:var(--mute)}
+.menu details[open]>summary::after{content:"▴"}
+.menu .l1>summary{font-size:22px;font-weight:700}
+.menu .inner{padding-left:28px}
+.menu a.item{display:flex;justify-content:space-between;padding:12px 4px;min-height:44px;text-decoration:none;color:var(--ink);border-bottom:1px solid #ECEAE2}
+.menu a.item:hover{background:#EAE9E1}
+.menu .arr{color:var(--mute);font-size:13px}
+/* detail */
+.steps{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.step{flex:1 1 130px;border-radius:10px;padding:12px 16px;background:var(--navy);color:#fff;min-height:64px}
+.step.cur{background:#fff;color:var(--navy);border:2px solid var(--navy)}.step.todo{background:#E9E8E0;color:var(--mute)}
+.step .sn{font-size:11px;opacity:.8}.step .st{font-weight:700;font-size:14px}.step .sd{font-size:11px;opacity:.85}
+.two{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.photo{flex:0 0 300px;height:300px;border-radius:12px;background:#EFEDE4;border:1px dashed #CFCCC0;display:flex;align-items:center;justify-content:center;color:var(--mute);text-align:center;overflow:hidden;padding:12px;font-size:13px}
+.photo img{width:100%;height:100%;object-fit:contain}
+.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:8px 0;border-bottom:1px solid #F0EEE6;font-size:13px}
+.kv span:first-child{color:var(--mute)}
+.info{flex:1 1 480px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:28px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#F6F5F0;font-size:12px;font-weight:700;color:var(--mute);text-align:left;padding:10px 12px;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #F0EEE6;vertical-align:middle}
+th:first-child{border-radius:8px 0 0 8px}th:last-child{border-radius:0 8px 8px 0}
+td.n,th.n{text-align:right}
+tr.latest td{background:var(--warm)}
+tr.sub td{background:#FAF9F5}
+tr.tot td{background:#F6F5F0;font-weight:700}
+.dl{display:block;font-size:11px;font-weight:700;border-radius:4px;padding:0 6px;margin-top:2px;width:max-content;margin-left:auto}
+.dl.neg{background:var(--bad);color:var(--bad-t)}.dl.pos{background:var(--amber);color:var(--amber-t)}.dl.eq{background:#E9E8E0;color:#4A4A45}.dl.wait{background:transparent;color:#6B6A62;font-weight:500}
+button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--navy);cursor:pointer;min-height:36px;padding:0;display:flex;gap:8px;align-items:center}
+.empty{color:var(--mute);padding:24px 4px}
+.note{font-size:12px;color:var(--mute);margin:8px 0 0}
+.locked{background:#EFEDE4;border:1px dashed #CFCCC0;border-radius:8px;padding:10px 14px;color:var(--mute);font-size:13px}
+#banner .b{background:#FFF3D6;color:#6B4A00;padding:8px 24px;font-size:13px;display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.login{max-width:520px;margin:100px auto;text-align:center}
+.top .btn{min-height:34px;padding:0 14px}.top .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+#refresh[disabled]{opacity:.7;cursor:progress}
+.login input{font:inherit;font-size:16px;min-height:44px;padding:0 14px;border:1px solid #CFCCC0;border-radius:8px;width:220px;text-align:center}
+.login .err{color:#A3341F;font-size:13px;min-height:20px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1F2A44;color:#fff;padding:12px 18px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#toast.show{opacity:1}#toast.bad{background:#A3341F}
+.pk{border:1.5px solid var(--ink);background:#fff;margin-bottom:12px}
+.pk .hd{padding:10px 14px;font-weight:700;border-bottom:1px solid #D8D6CC}
+.files .f{border:1px solid var(--line);background:#fff;border-radius:12px;margin-bottom:12px}
+.files .fh{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}
+.codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;padding:4px 16px 16px}
+.code{font-size:13px;background:#F6F5F0;border:1px solid var(--line);border-radius:6px;padding:8px 12px;text-align:center}
+@media (max-width:720px){.wrap{padding:20px 16px 60px}.top{padding:8px 16px}.photo{flex-basis:100%}}
+</style>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#">리넥츠 시즌 관제탑</a>
-  <div class="searchbox" role="search">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-    <input type="search" id="q" placeholder="품번 · 컬러 · 아이템명 · 기획명 · 내용 검색" aria-label="검색" autocomplete="off" disabled>
+  <a class="brand" href="#/">리넥츠 시즌 관제탑</a>
+  <nav class="topnav" aria-label="주 메뉴">
+    <a href="#/board">진행 현황</a>
+    <a href="#/items">아이템별</a>
+    <a href="#/inbound">3PL 검수</a>
+    <a href="#/barcode">바코드</a>
+    <a href="#/archive">패킹리스트 보관함</a>
+  </nav>
+  <div class="topright">
+    <label class="seasonsel">시즌
+      <select id="season" aria-label="시즌 선택"></select>
+    </label>
+    <span id="who" class="who"></span>
+    <span id="upd" class="who"></span>
+    <button id="refresh" class="btn" type="button" hidden>최신화</button>
+    <button id="lockbtn" class="btn ghost" type="button" hidden>잠그기</button>
   </div>
-  <div class="topright"><span id="updated" class="upd"></span><button id="refresh" class="lnk refresh" hidden>최신화</button><button id="lock" class="lnk" hidden>잠그기</button></div>
 </header>
+<div id="banner"></div>
 <main id="app" class="wrap"></main>
-<dialog id="detail" aria-labelledby="dtitle"></dialog>
-<script src="config.js"></script>
-<script src="app.js"></script>
+<script>/* config.js 는 사이트 첫 폴더에 있다 (…/27SS 주소에서도) */window.SITE_ROOT=location.pathname.replace(/\/+$/,'').replace(/\/\d{2}(SS|FW)$/i,'')+'/';if(!/\/$/.test(window.SITE_ROOT))window.SITE_ROOT+='/';document.write('<script src="'+window.SITE_ROOT+'config.js"><\/script>');</script>
+<script>/* 관제탑 서버(Apps Script) 연결: 비밀번호 → 데이터 받기 → 데모 화면이 쓰는 표 형식으로 바꾸기 · [최신화] */
+(function () {
+  'use strict';
+  var API = (window.SITE_CONFIG && window.SITE_CONFIG.api) || '';
+  if (!API) return; // 서버 주소가 없으면 예전 데모처럼 동작
+  var PW = 'renacts.pw';
+  var DATA = null;
+  var seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
+  var qs = new URLSearchParams(location.search).get('s') || '';
+  var SEASON = (/^\d{2}(SS|FW)$/i.test(seg) ? seg : /^\d{2}(SS|FW)$/i.test(qs) ? qs : '').toUpperCase();
+  if (SEASON) document.title = '리넥츠 ' + SEASON + ' 관제탑';
+
+  function $(s) { return document.querySelector(s); }
+  function sget(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function sset(k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+  function sdel(k) { try { localStorage.removeItem(k); } catch (e) { } }
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  function api(action, pw) {
+    return fetch(API, { method: 'POST', body: JSON.stringify({ action: action, pw: pw }), redirect: 'follow' })
+      .then(function (r) { return r.json(); })
+      .then(function (j) { if (!j.ok) { var e = new Error(j.error || '서버 오류'); e.auth = /비밀번호/.test(j.error || ''); throw e; } return j.data; });
+  }
+  function toast(msg, bad) {
+    var t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
+    clearTimeout(t._h); t._h = setTimeout(function () { t.className = ''; }, 5000);
+  }
+  function use(data) {
+    DATA = data;
+    $('#upd').textContent = '최신화 ' + (data.updated || '');
+    $('#refresh').hidden = false; $('#lockbtn').hidden = false;
+  }
+
+  /* 비밀번호 화면 */
+  function lockForm(msg) {
+    return new Promise(function (resolve) {
+      $('#app').innerHTML = '<form class="login card" id="lockf"><h1>리넥츠 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
+        '<p><input type="password" id="pw" autocomplete="current-password" aria-label="비밀번호" required></p>' +
+        '<p class="err" id="err" role="alert">' + esc(msg || '') + '</p><p><button class="btn pri" type="submit">열기</button></p></form>';
+      $('#pw').focus();
+      $('#lockf').onsubmit = function (ev) {
+        ev.preventDefault();
+        var pw = $('#pw').value; $('#err').textContent = '확인 중…';
+        api('get', pw).then(function (data) { sset(PW, pw); use(data); resolve(data); })
+          .catch(function (e) { $('#err').textContent = e.message; });
+      };
+    });
+  }
+
+  function labels() { return (DATA.seasons || []).map(function (s) { return s.label; }); }
+
+  /* ---------- 서버 데이터 → 데모 표 형식 ---------- */
+  function strip(st) { return String(st || '').replace(/^\d{1,2}_?\s*/, ''); }
+  var CATS = ['아우터(코트,점퍼,패딩)', '자켓(블레이저,자켓,셔켓)', '셔츠(솔리드,체크)', '니트(긴팔,반팔)', '다이마루상의(맨투맨,긴팔,반팔)', '팬츠(데님,우븐)', '하프팬츠(데님,우븐)', '악세사리(타이,벨트,모자)'];
+  var STG = ['개발진행중', '패턴', '프로토샘플', 'QC · 재QC', 'APP', '메인수납', '종결'];
+  var QK = ['order', 'cut', 'wash', 'finish', 'store', 'tpl'];
+  function raw(label) {
+    var season = (DATA.seasons || []).filter(function (s) { return s.label === label; })[0] || { items: [] };
+    var T = {};
+    T['10_제품마스터'] = [['생산건ID', '품번', '차수', '시즌', '구분', '기획명', 'Flow FIX 제품명', '영문 판매명', '카테고리', '상태', '현재 단계', '최근 일자', '최근 내용', '기록 수', '컬러', '혼용율', '원산지(제조국)', '워싱 여부', '세트 연결', '봉제공장', 'FIT', '원단', '규격 · 중량', '워싱기법', '원가 NET TOTAL (VAT+)', '판가', '배수', '원가계산서 링크', '작업지시서 PDF 링크', '원부자재 발주 링크', '메모', '제품 시트']];
+    T['11_컬러'] = [['생산건ID', '컬러', '작업지시서 컬러코드', '패킹리스트·바코드 컬러코드', '비고', '컬러 순번', '조회 키', '컬러 누적 목록']];
+    T['12_히스토리'] = [['생산건ID', '일자', '단계', '내용', '출처', '첨부 링크', '순번', '최신', '최신 키', '단계 키', '순번 키', '제품명', '작성자']];
+    T['13_작업지시서'] = [['생산건ID', '컬러', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '합계', '비고', '조회 키']];
+    T['14_사이즈치수'] = [['생산건ID', '부위', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '비고', '부위 순번', '조회 키']];
+    T['15_이동수량'] = [['생산건ID', '컬러', '사이즈', '요청수량', '재단', '워싱처 입고', '완성집 입고', '수납용 입고', '3PL 입고', '워싱 여부', '재단 증감', '워싱처 증감', '완성집 증감', '수납용 증감', '3PL 증감', '부족 · 초과 요약', '증빙 링크', '입력일', '메모']];
+    T['20_3PL검수'] = [['입고일', '스타일 NO (생산건ID)', '바코드', '입고수량 (패킹리스트)', '검수수량 (3PL)', '상품명', '컬러', '사이즈', '차이 (검수−입고)', '전장 대조', '상태', '검수파일 링크', '메모']];
+    T['21_패킹리스트'] = [['생산건ID', '컬러', '구분', '부자재', '적용 사이즈', '1장당', '적용수량', '기준수량', '여유수량', '발송수량', '부자재 합계 (생산건 전체)', '', '생산건ID', '컬러', '패킹리스트 제목', '발송처', '발송일', '입고처', '입고일', '메인사진 링크', '조회 키']];
+    T['22_패킹보관함'] = [['파일명', '생산건ID', '컬러', '입고일', '바코드 개수', '파일 링크 (드라이브)', '메모', '조회 키']];
+    T['30_바코드마스터'] = [['구분', '스타일 NO (생산건ID)', '컬러', '사이즈', '바코드 번호', '등록일', '메모', '중복 검사', '조회 키']];
+    var st = [['시즌 목록', '카테고리', '상태', '진행 단계', '단계 번호', '', '', '', '', '', '', '', '파일 설정', '값']];
+    for (var i = 0; i < Math.max(CATS.length, STG.length); i++) st.push([i === 0 ? label : '', CATS[i] || '', ['진행', '보류', '드랍'][i] || '', STG[i] || '', i < STG.length ? i + 1 : '', '', '', '', '', '', '', '', i === 0 ? '현재 시즌' : '', i === 0 ? label : '']);
+    T['99_설정'] = st;
+    (season.items || []).forEach(function (it) {
+      var D = it.detail || { colors: [], info: {}, history: [], qty: [], barcodes: [], tpl: { rows: [] } }, I = D.info || {};
+      var pid = it.code + '_' + (it.round || 'NEW'), multi = (D.colors || []).length > 1;
+      T['10_제품마스터'].push([pid, it.code, it.round, it.season || label, it.type, it.plan, it.name, it.name, it.category, it.status, strip(it.stage), it.updated, it.recent, (D.history || []).length, it.color,
+        I.mixOuter || '', I.origin || '', I.wash || '', I.set || '', I.factory || '', I.fit || '', I.fabric || '', I.spec || '', I.washMethod || '', '', '', '', '', '', '', it.memo || '', it.url || '']);
+      var acc = [];
+      (D.colors || []).forEach(function (c, k) { acc.push(c.code); T['11_컬러'].push([pid, c.code, c.code, c.code, c.name, k + 1, pid + '#' + (k + 1), acc.join(', ')]); });
+      var n = (D.history || []).length;
+      (D.history || []).forEach(function (h, k) {
+        var txt = (multi && h.color ? '[' + h.color + '] ' : '') + h.text;
+        T['12_히스토리'].push([pid, h.date, strip(h.stage), txt, h.source, h.link, k + 1, k + 1 === n ? '최신' : '', k + 1 === n ? pid : '', pid + '|' + strip(h.stage), pid + '#' + (k + 1), it.plan, h.by || '']);
+      });
+      (D.qty || []).forEach(function (q) {
+        var o = q.stages && q.stages.order;
+        if (o) { var sz = (o.sizes || []).concat([null, null, null, null]).slice(0, 4); T['13_작업지시서'].push([pid, q.color].concat(sz.map(function (v) { return v == null ? '' : v; })).concat([o.total || '', '', pid + '|' + q.color])); }
+        if (!q.stages || !Object.keys(q.stages).length) return;
+        for (var si = 0; si < 4; si++) {
+          var vals = QK.map(function (key) { var s = q.stages[key]; var v = s ? s.sizes[si] : null; return v == null ? '' : v; });
+          if (vals.every(function (v) { return v === ''; })) continue;
+          T['15_이동수량'].push([pid, q.color, si + 1].concat(vals).concat([I.wash || '있음', '', '', '', '', '', '', '', '', '']));
+        }
+      });
+      (D.barcodes || []).forEach(function (b) { T['30_바코드마스터'].push([b.kind || '신규', pid, b.color, b.size, b.barcode, b.date, b.memo, '', '']); });
+      ((D.tpl && D.tpl.rows) || []).forEach(function (r) { T['20_3PL검수'].push([D.tpl.date, pid, r.barcode, r.packed, r.checked, it.name || it.plan, r.color, r.size, r.diff, '', r.result, '', '']); });
+      (D.colors || []).forEach(function (c) { T['21_패킹리스트'].push(['', '', '', '', '', '', '', '', '', '', '', '', pid, c.code, it.code + '_' + c.code, '리넥츠 사무실', '', I.factory || '', '', '', pid + '|' + c.code]); });
+    });
+    return T;
+  }
+
+  window.RENACTS = {
+    season: SEASON,
+    raw: raw,
+    login: function () {
+      var pw = sget(PW);
+      var go = pw ? api('get', pw).then(function (d) { use(d); return d; }).catch(function (e) { if (e.auth) sdel(PW); return lockForm(e.auth ? '' : e.message); }) : lockForm('');
+      return go.then(labels);
+    },
+    reload: null
+  };
+
+  document.addEventListener('DOMContentLoaded', function () {
+    $('#refresh').onclick = function () {
+      var b = this; b.disabled = true; b.textContent = '공유 드라이브에서 읽는 중…';
+      api('refresh', sget(PW)).then(function (d) {
+        use(d);
+        toast('최신화 완료 · 제품 파일 ' + (d.files || 0) + '개' + (d.errors && d.errors.length ? ' · 읽지 못한 파일 ' + d.errors.length + '개' : ''));
+        if (window.RENACTS.reload) window.RENACTS.reload();
+      }).catch(function (e) { toast('최신화 실패: ' + e.message, true); })
+        .then(function () { b.disabled = false; b.textContent = '최신화'; });
+    };
+    $('#lockbtn').onclick = function () { sdel(PW); location.reload(); };
+  });
+})();
+</script><script>(function () {
+'use strict';
+var CFG = window.APP_CONFIG || {};
+var SEASONS = [{ label: '시즌', sheetId: '' }];
+var DEMO = !CFG.CLIENT_ID;
+var TABS = ['10_제품마스터','11_컬러','12_히스토리','13_작업지시서','14_사이즈치수','15_이동수량','20_3PL검수','21_패킹리스트','22_패킹보관함','30_바코드마스터','99_설정'];
+var MOVE_STAGES = ['작업 요청','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
+var MOVE_COLS = ['요청수량','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
+var CMAP = { 'NAVY':['#2A3560','#fff'],'BLUE STRIPE':['#9DB4D6','#1B2A3D'],'BEIGE':['#D9C3A0','#2A2218'], 'GN':['#2F5D43','#fff'],'NV':['#2A3560','#fff'],'BE':['#D9C3A0','#2A2218'],'LBU':['#BCD0E6','#1B2A3D'],'GREEN MULTI':['#2F5D43','#fff'],'WHITE MULTI':['#ECEAE2','#2A2A28'],'RED MULTI':['#8E2A25','#fff'],'ORANGE MULTI':['#E0954F','#2A1A0A'] };
+
+var S = { season: SEASONS[0].label, token: null, data: null, cost: {}, hasCost: false, demoCost: false, openColors: {}, filter: 'all', inboundFilter: 'all', bcTab: 'old', q: '', openFile: null, openCards: {} };
+
+function $(s, el) { return (el || document).querySelector(s); }
+function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+function num(v) { if (v === '' || v == null) return null; var n = Number(String(v).replace(/,/g, '')); return isNaN(n) ? null : n; }
+function seasonCfg() { return SEASONS.filter(function (s) { return s.label === S.season; })[0] || SEASONS[0]; }
+
+/* ---------- 데이터 읽기 ---------- */
+function table(values, from, to) {
+  if (!values || !values.length) return [];
+  var hdr = (values[0] || []).slice(from || 0, to);
+  var out = [];
+  for (var i = 1; i < values.length; i++) {
+    var r = (values[i] || []).slice(from || 0, to), o = {}, any = false;
+    hdr.forEach(function (k, j) { var v = r[j] === undefined ? '' : r[j]; o[k] = v; });
+    if (String(o[hdr[0]] || '').trim() !== '') out.push(o);
+  }
+  return out;
+}
+function fetchSheet(id, ranges) {
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + id + '/values:batchGet?valueRenderOption=FORMATTED_VALUE&' +
+    ranges.map(function (r) { return 'ranges=' + encodeURIComponent(r); }).join('&');
+  return fetch(url, { headers: { Authorization: 'Bearer ' + S.token } }).then(function (r) {
+    if (!r.ok) { var e = new Error('HTTP ' + r.status); e.status = r.status; throw e; }
+    return r.json();
+  });
+}
+function loadRaw() {
+  if (DEMO) {
+    if (window.RENACTS) return Promise.resolve(window.RENACTS.raw(S.season));
+    if (window.SAMPLE) return Promise.resolve(window.SAMPLE);
+    return fetch('data/sample.json').then(function (r) { return r.json(); });
+  }
+  var c = seasonCfg();
+  return fetchSheet(c.sheetId, TABS.map(function (t) { return "'" + t + "'!A3:AZ1000"; })).then(function (res) {
+    var o = {}; TABS.forEach(function (t, i) { o[t] = res.valueRanges[i].values || []; });
+    if (!c.costSheetId) return o;
+    return fetchSheet(c.costSheetId, ["'원가판가'!A3:E1000"]).then(function (cr) { o['원가판가'] = cr.valueRanges[0].values || []; return o; })
+      .catch(function () { return o; });
+  });
+}
+function build(raw) {
+  var M = table(raw['10_제품마스터']);
+  var d = { raw: raw, products: [], byId: {} };
+  d.settings = (function () {
+    var v = raw['99_설정'] || [], st = [], cats = [];
+    for (var i = 1; i < v.length; i++) { if (v[i][3]) st.push(v[i][3]); if (v[i][1]) cats.push(v[i][1]); }
+    return { stages: st.length ? st : ['개발진행중','패턴','프로토샘플','QC · 재QC','APP','메인수납','종결'], cats: cats };
+  })();
+  function group(rows, key) { var g = {}; rows.forEach(function (r) { var k = typeof key === 'function' ? key(r) : r[key]; (g[k] = g[k] || []).push(r); }); return g; }
+  d.hist = group(table(raw['12_히스토리']), '생산건ID');
+  d.colors = group(table(raw['11_컬러']), '생산건ID');
+  d.orders = group(table(raw['13_작업지시서']), '생산건ID');
+  d.sizes = group(table(raw['14_사이즈치수']), '생산건ID');
+  d.moves = group(table(raw['15_이동수량']), '생산건ID');
+  d.insp = table(raw['20_3PL검수']);
+  d.inspById = group(d.insp, '스타일 NO (생산건ID)');
+  d.barcodes = table(raw['30_바코드마스터']);
+  d.bcById = group(d.barcodes, '스타일 NO (생산건ID)');
+  d.packItems = group(table(raw['21_패킹리스트'], 0, 11), '생산건ID');
+  d.packHdr = table(raw['21_패킹리스트'], 12, 21);
+  d.archive = table(raw['22_패킹보관함'], 0, 8);
+  M.forEach(function (m) { if (m['생산건ID']) { d.products.push(m); d.byId[m['생산건ID']] = m; } });
+  var cm = {};
+  table(raw['원가판가']).forEach(function (r) { cm[r['생산건ID']] = r; });
+  d.costMap = cm; d.hasCostData = !!raw['원가판가'];
+  return d;
+}
+function load() {
+  $('#app').innerHTML = '<p class="empty">불러오는 중…</p>';
+  return loadRaw().then(function (raw) {
+    S.data = build(raw);
+    S.hasCost = DEMO ? S.demoCost : S.data.hasCostData;
+    render();
+  }).catch(function (e) {
+    $('#app').innerHTML = '<div class="card"><h2>데이터를 불러오지 못했어요</h2><p>' + esc(e.message) + '</p><p class="sub">시트 공유 권한이 있는지, config.js의 시트 ID가 맞는지 확인해 주세요.</p></div>';
+  });
+}
+
+/* ---------- 로그인 ---------- */
+function ensureLogin() {
+  if (window.RENACTS) return window.RENACTS.login().then(function (labels) {
+    SEASONS = labels.map(function (l) { return { label: l, sheetId: '' }; });
+    if (!SEASONS.length) SEASONS = [{ label: window.RENACTS.season || '시즌', sheetId: '' }];
+    S.season = window.RENACTS.season && labels.indexOf(window.RENACTS.season) >= 0 ? window.RENACTS.season : SEASONS[0].label;
+    sel.innerHTML = SEASONS.map(function (s) { return '<option' + (s.label === S.season ? ' selected' : '') + '>' + esc(s.label) + '</option>'; }).join('');
+    window.RENACTS.reload = function () { load(); };
+  });
+  if (DEMO) return Promise.resolve();
+  return new Promise(function (resolve) {
+    function show() {
+      $('#app').innerHTML = '<div class="login card"><h1>시즌 생산관리</h1><p class="sub">회사 구글 계정으로 로그인하세요. 시트 공유 권한이 있는 계정만 내용을 볼 수 있습니다.</p><p><button id="loginbtn" class="btn pri">구글 계정으로 로그인</button></p></div>';
+      $('#loginbtn').onclick = function () { client.requestAccessToken(); };
+    }
+    var client;
+    var s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = function () {
+      client = google.accounts.oauth2.initTokenClient({ client_id: CFG.CLIENT_ID, scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+        callback: function (r) { if (r && r.access_token) { S.token = r.access_token; $('#who').textContent = '로그인됨'; resolve(); } } });
+      show();
+    };
+    document.head.appendChild(s);
+  });
+}
+
+/* ---------- 공통 조각 ---------- */
+function cchips(str) {
+  if (!str) return '';
+  return String(str).split(/,\s*/).map(function (l) { var m = CMAP[l] || ['#E3E1D8', '#333']; return '<span class="cc" style="background:' + m[0] + ';color:' + m[1] + '">' + esc(l) + '</span>'; }).join('');
+}
+function pid(p) { return p['생산건ID']; }
+function ptag(p) { return p['구분'] === '리오더' ? (p['차수'] || '리오더') : (String(p['품번']).indexOf('미부여') === 0 ? '라인업' : 'NEW'); }
+function plink(p, text) { return '<a href="#/p/' + encodeURIComponent(pid(p)) + '">' + esc(text || p['기획명'] || pid(p)) + '</a>'; }
+function lastHist(id) { var h = S.data.hist[id]; return h && h.length ? h[h.length - 1] : null; }
+function md(date) { var m = /^\d{4}-(\d\d)-(\d\d)/.exec(date || ''); return m ? m[1] + '/' + m[2] : (date || ''); }
+function imgUrl(u) {
+  if (!u) return '';
+  var m = /\/d\/([\w-]+)/.exec(u) || /[?&]id=([\w-]+)/.exec(u);
+  return m ? 'https://drive.google.com/thumbnail?sz=w1000&id=' + m[1] : u;
+}
+function title(eyebrow, h, sub, right) {
+  return '<div class="row" style="margin-bottom:20px"><div><div class="eyebrow">' + esc(eyebrow) + '</div><h1>' + esc(h) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + (right || '') + '</div>';
+}
+function stageIdx(p) { return S.data.settings.stages.indexOf(p['현재 단계']); }
+
+/* ---------- 홈 ---------- */
+function viewHome() {
+  var d = S.data, P = d.products;
+  var ing = P.filter(function (p) { return p['상태'] !== '드랍'; }).length;
+  var holdN = P.filter(function (p) { return p['상태'] === '보류'; }).length;
+  var drop = P.filter(function (p) { return p['상태'] === '드랍'; }).length;
+  var diff = d.insp.filter(function (r) { return r['상태'] === '부족' || r['상태'] === '초과'; }).length;
+  var shortRows = 0; Object.keys(d.moves).forEach(function (k) { d.moves[k].forEach(function (r) { if (r['부족 · 초과 요약']) shortRows++; }); });
+  var cats = d.settings.cats.concat(['미분류']);
+  var html = title('RENACTS · ' + S.season, '시즌 자료 관제탑', '시트에 입력된 내용을 보기 쉽게 보여줍니다. 수정은 시트에서 합니다.');
+  html += '<div class="stats"><div class="stat"><div class="l">진행 중 제품' + (holdN ? ' <span class="chip warn">보류 ' + holdN + ' 포함</span>' : '') + '</div><div class="v mono">' + ing + '</div></div><div class="stat"><div class="l">드랍</div><div class="v mono">' + drop + '</div></div>' +
+    '<div class="stat"><div class="l">수량 부족·초과 확인 필요</div><div class="v mono">' + shortRows + '</div></div><div class="stat"><div class="l">3PL 수량 차이 (바코드)</div><div class="v mono">' + diff + '</div></div></div>';
+  html += '<div class="card menu"><details class="l1" open><summary>시즌 ' + esc(S.season) + '</summary><div class="inner">' +
+    '<a class="item" href="#/board"><span>시즌 진행 현황</span><span class="arr">보드로 이동 →</span></a>' +
+    '<details><summary>아이템별 구분</summary><div class="inner">' + cats.map(function (c) {
+      var list = P.filter(function (p) { return (p['카테고리'] || '미분류') === c; });
+      return '<details><summary>' + esc(c) + ' <span class="chip gray">' + list.length + '개</span></summary><div class="inner">' +
+        (list.length ? list.map(function (p) { return '<a class="item" href="#/p/' + encodeURIComponent(pid(p)) + '"><span>' + esc(p['기획명'] || pid(p)) + ' <span class="mono sub">' + esc(pid(p)) + '</span>' + (p['상태'] === '보류' ? ' <span class="chip warn">보류</span>' : p['상태'] === '드랍' ? ' <span class="chip bad">드랍</span>' : '') + '</span><span class="arr">상세 →</span></a>'; }).join('') : '<div class="empty">이 카테고리로 지정된 제품이 없어요</div>') +
+        '</div></details>'; }).join('') + '</div></details></div></details>' +
+    '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/inbound"><span>3PL 입고 검수 비교</span><span class="arr">→</span></a>' +
+    '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/barcode"><span>바코드 시스템 마스터</span><span class="arr">기존 · 신규 →</span></a>' +
+    '<a class="item" style="font-size:20px;font-weight:700;min-height:60px" href="#/archive"><span>패킹리스트 보관함</span><span class="arr">엑셀 보관함 →</span></a></div>';
+  return html;
+}
+function viewItems() { return viewHome(); }
+
+/* ---------- 진행 보드 ---------- */
+function viewBoard() {
+  var d = S.data, ST = d.settings.stages;
+  var P = d.products.filter(function (p) { return p['상태'] !== '드랍'; });
+  var rows = [{ k: '신규', label: '신규' }, { k: '리오더', label: '리오더' }].filter(function (r) { return S.filter === 'all' || S.filter === r.k; });
+  var shown = P.filter(function (p) { return S.filter === 'all' || p['구분'] === S.filter; });
+  var h = title('진행관리 보드', '시즌 진행현황', '카드를 누르면 가장 마지막 진행사항과 메모가 펼쳐지고, 펼친 카드의 \'상세 보기\'로 제품 상세에 들어갑니다. 진행 확정 전인 제품은 카드에 보류 표시가 붙어요.',
+    '<div class="seg" role="group" aria-label="구분 필터">' + [['all','전체'],['신규','신규'],['리오더','리오더']].map(function (t) { return '<button class="segb ' + (S.filter === t[0] ? 'on' : '') + '" data-filter="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>');
+  h += '<div class="scroll"><div class="grid"><div></div>' + ST.map(function (n, i) { return '<div class="sh"><span>0' + (i + 1) + ' ' + esc(n) + '</span><span class="mono">' + shown.filter(function (p) { return stageIdx(p) === i; }).length + '</span></div>'; }).join('') + '</div>';
+  rows.forEach(function (r) {
+    h += '<div class="grid"><div class="rl"><b>' + r.label + '</b><span>' + esc(S.season) + '</span></div>' + ST.map(function (n, i) {
+      var cards = P.filter(function (p) { return p['구분'] === r.k && stageIdx(p) === i; });
+      return '<div class="col">' + (cards.length ? cards.map(function (p) {
+        var l = lastHist(pid(p));
+        return '<div class="kcard' + (S.openCards[pid(p)] ? ' open' : '') + '" data-card="' + esc(pid(p)) + '" role="button" tabindex="0" aria-expanded="' + !!S.openCards[pid(p)] + '"><div style="display:flex;justify-content:space-between;gap:6px"><span class="mono" style="font-size:12px;font-weight:500">' + esc(String(p['품번']).indexOf('미부여') === 0 ? '품번 미부여' : p['품번']) + '</span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + (p['상태'] === '보류' ? '<span class="chip warn">보류</span>' : '') + '<span class="chip">' + esc(ptag(p)) + '</span></span></div>' +
+          '<div class="kn">' + esc(p['기획명']) + '</div><div>' + cchips(p['컬러']) + '</div>' +
+          (l ? '<div class="kstat"><b>#' + (d.hist[pid(p)].length) + '</b> · ' + esc(md(l['일자'])) + ' · ' + esc(l['내용']) + '</div>' : '') +
+          (p['메모'] && p['메모'] !== '품번 부여 전 단계' ? '<div class="kflag">' + esc(p['메모']) + '</div>' : '') + '<a class="kmore" href="#/p/' + encodeURIComponent(pid(p)) + '">상세 보기 →</a></div>';
+      }).join('') : '<div class="dash">–</div>') + '</div>'; }).join('') + '</div>';
+  });
+  h += '</div>';
+  var hold = d.products.filter(function (p) { return p['상태'] === '드랍'; });
+  h += '<h2 style="margin-top:28px">드랍 <span class="sub">진행 제외</span></h2><div class="hold">' + (hold.length ? hold.map(function (p) {
+    return '<div class="hitem"><span class="chip bad">' + esc(p['상태']) + '</span><b>' + esc(p['기획명']) + '</b><span class="sub">' + esc(p['메모']) + '</span></div>'; }).join('') : '<span class="sub">없음</span>') + '</div>';
+  return h;
+}
+
+/* ---------- 수량 계산 ---------- */
+function qtyModel(id, wash) {
+  var moves = S.data.moves[id] || [], colors = (S.data.colors[id] || []).map(function (c) { return c['컬러']; });
+  var use = MOVE_STAGES.map(function (n, i) { return !(wash !== '있음' && (i === 2 || i === 3)); });
+  function val(rows, col) { var seen = false, sum = 0; rows.forEach(function (r) { var v = num(r[col]); if (v !== null) { seen = true; sum += v; } }); return seen ? sum : null; }
+  function line(rows) { return MOVE_COLS.map(function (c, i) { return use[i] ? val(rows, c) : undefined; }); }
+  var out = { colors: [], total: null, use: use };
+  colors.forEach(function (c) {
+    var cr = moves.filter(function (r) { return r['컬러'] === c; });
+    out.colors.push({ name: c, line: line(cr), sizes: [1,2,3,4].map(function (s) { return { size: s, line: line(cr.filter(function (r) { return String(r['사이즈']) === String(s); })) }; }) });
+  });
+  out.total = MOVE_COLS.map(function (c, i) {
+    if (!use[i] || !out.colors.length) return use[i] ? null : undefined;
+    var vs = out.colors.map(function (x) { return x.line[i]; });
+    return vs.every(function (v) { return v !== null; }) ? vs.reduce(function (a, b) { return a + b; }, 0) : null;
+  });
+  return out;
+}
+function cells(line) {
+  var prev = null;
+  return line.map(function (v) {
+    if (v === undefined) return { t: '–', d: '제외', c: 'wait' };
+    if (v === null) return { t: '–', d: '대기', c: 'wait' };
+    var r;
+    if (prev === null) r = { t: String(v), d: '시작', c: 'wait' };
+    else if (v < prev) r = { t: String(v), d: '−' + (prev - v) + ' 부족', c: 'neg' };
+    else if (v > prev) r = { t: String(v), d: '+' + (v - prev) + ' 초과', c: 'pos' };
+    else r = { t: String(v), d: '동일', c: 'eq' };
+    prev = v; return r;
+  });
+}
+function qtyHtml(id, wash) {
+  var m = qtyModel(id, wash);
+  if (!m.colors.length) return '<div class="empty">등록된 컬러가 없어요. 시트의 11_컬러에 추가하세요.</div>';
+  var heads = MOVE_STAGES.filter(function (n, i) { return m.use[i]; });
+  function tds(line) { return cells(line).filter(function (c, i) { return m.use[i]; }).map(function (c) { return '<td class="n">' + esc(c.t) + '<span class="dl ' + c.c + '">' + esc(c.d) + '</span></td>'; }).join(''); }
+  var h = '<div class="scroll"><table><thead><tr><th>컬러 / 사이즈</th>' + heads.map(function (n) { return '<th class="n">' + esc(n) + '</th>'; }).join('') + '</tr></thead><tbody>';
+  m.colors.forEach(function (c) {
+    var key = id + '|' + c.name, open = !!S.openColors[key];
+    h += '<tr><td><button class="tgl" data-color="' + esc(key) + '" aria-expanded="' + open + '">' + (open ? '▴' : '▾') + ' ' + esc(c.name) + '</button></td>' + tds(c.line) + '</tr>';
+    if (open) c.sizes.forEach(function (s) { h += '<tr class="sub"><td style="padding-left:32px">' + esc(c.name) + ' · 사이즈 ' + s.size + '</td>' + tds(s.line) + '</tr>'; });
+  });
+  h += '<tr class="tot"><td>합계</td>' + tds(m.total) + '</tr></tbody></table></div>';
+  return h;
+}
+
+/* ---------- 제품 상세 ---------- */
+function infoKv(rows) { return rows.map(function (r) { return '<div class="kv"><span>' + esc(r[0]) + '</span><span>' + (r[2] ? r[1] : esc(r[1] || '–')) + '</span></div>'; }).join(''); }
+function viewProduct(id) {
+  var d = S.data, p = d.byId[id];
+  if (!p) return '<div class="card"><h2>제품을 찾을 수 없어요</h2><p><a href="#/">관제탑으로 돌아가기</a></p></div>';
+  var ST = d.settings.stages, cur = stageIdx(p), hist = d.hist[id] || [];
+  var hdrs = d.packHdr.filter(function (r) { return r['생산건ID'] === id; });
+  var photo = ''; hdrs.forEach(function (r) { if (!photo && r['메인사진 링크']) photo = r['메인사진 링크']; });
+  var link = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>' : '<span class="chip gray">' + t + ' 미등록</span>'; };
+  var h = '<div class="crumb"><a href="#/">← 관제탑</a> · <a href="#/board">진행현황</a> · ' + esc((p['카테고리'] || '미분류') + ' › ' + (p['기획명'] || id)) + '</div>';
+  h += title(ptag(p) + ' · ' + p['시즌'], p['기획명'] || id, '<span class="mono">' + esc(id) + '</span>' + (p['상태'] !== '진행' ? ' · <span class="chip bad">' + esc(p['상태']) + '</span>' : ''),
+    '<div style="display:flex;gap:10px;flex-wrap:wrap">' + (p['제품 시트'] ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(p['제품 시트']) + '">제품 시트 열기</a>' : '') + (p['원가계산서 링크'] && S.hasCost ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원가계산서 링크']) + '">원가계산서 열기</a>' : '') + (p['작업지시서 PDF 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['작업지시서 PDF 링크']) + '">작업지시서 PDF</a>' : '') + (p['원부자재 발주 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원부자재 발주 링크']) + '">원부자재 발주</a>' : '') + '</div>');
+  h += '<div class="steps">' + ST.map(function (n, i) {
+    var f = hist.filter(function (x) { return x['단계'] === n; })[0];
+    return '<div class="step ' + (cur < 0 ? 'todo' : i < cur ? '' : i === cur ? 'cur' : 'todo') + '"><div class="sn">0' + (i + 1) + '</div><div class="st">' + esc(n) + '</div><div class="sd">' + (f ? esc(md(f['일자'])) : i === cur ? '진행중' : '&nbsp;') + '</div></div>'; }).join('') + '</div>';
+  var cost = S.hasCost ? d.costMap[id] : null;
+  h += '<div class="card"><div class="two"><div class="photo">' + (photo ? '<img src="' + esc(imgUrl(photo)) + '" alt="' + esc(p['기획명']) + ' 메인 사진">' : '제품 사진') + '</div>' +
+    '<div class="info"><div><h2>제품 정보</h2>' + infoKv([['기획명', p['기획명']], ['Flow FIX 제품명', p['Flow FIX 제품명']], ['영문 판매명', p['영문 판매명']], ['카테고리', p['카테고리']], ['구분 · 차수', p['구분'] + ' · ' + p['차수']], ['컬러', cchips(p['컬러']) || '', true], ['세트 연결', p['세트 연결']]]) + '</div>' +
+    '<div><h2>&nbsp;</h2>' + infoKv([['혼용율', p['혼용율']], ['원산지(제조국)', p['원산지(제조국)']], ['워싱 여부', p['워싱 여부']], ['봉제공장', p['봉제공장']], ['FIT', p['FIT']], ['원단', p['원단']], ['규격 · 중량', p['규격 · 중량']], ['워싱기법', p['워싱기법']]]) +
+    (S.hasCost ? infoKv([['원가 (VAT+)', cost && cost['원가 NET TOTAL (VAT+)'] ? Number(num(cost['원가 NET TOTAL (VAT+)'])).toLocaleString() + '원' : '미입력'], ['판가 · 배수', cost && cost['판가'] ? Number(num(cost['판가'])).toLocaleString() + '원 · ' + (num(cost['원가 NET TOTAL (VAT+)']) ? (num(cost['판가']) / num(cost['원가 NET TOTAL (VAT+)'])).toFixed(1) + '배' : '-') : '미입력']]) : '<div class="kv"><span>원가 · 판가</span><span class="locked">열람 권한이 없습니다</span></div>') + '</div></div>' +
+    (p['메모'] ? '<p class="note">메모: ' + esc(p['메모']) + '</p>' : '') + '</div></div>';
+  h += '<div class="card"><div class="row"><h2>단계별 수량 추적</h2><span class="sub">워싱 ' + esc(p['워싱 여부'] || '미지정') + ' · 각 칸 아래 표시는 바로 앞 단계 대비입니다. 컬러를 누르면 사이즈별로 펼쳐집니다.</span></div>' + qtyHtml(id, p['워싱 여부']) + '</div>';
+  var sz = d.sizes[id] || [];
+  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n mono">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
+  var ins = d.inspById[id] || [];
+  h += '<div class="card"><h2>3PL 입고 검수</h2>' + (ins.length ? inspTable(ins) : '<div class="empty">아직 3PL 입고 기록이 없어요.</div>') + '</div>';
+  var items = d.packItems[id] || [];
+  h += '<div class="card"><h2>패킹리스트</h2>' + (items.length ? packHtml(id, items, hdrs) : '<div class="empty">등록된 부자재 구성이 없어요.</div>') + '</div>';
+  h += '<div class="card"><h2>히스토리</h2>' + (hist.length ? '<table><thead><tr><th>순번</th><th>일자</th><th>단계</th><th>내용</th><th>출처</th><th>첨부</th></tr></thead><tbody>' +
+    hist.map(function (r, i) { return '<tr class="' + (i === hist.length - 1 ? 'latest' : '') + '"><td class="mono">' + (i + 1) + '</td><td class="mono">' + esc(md(r['일자'])) + '</td><td>' + esc(r['단계']) + '</td><td>' + esc(r['내용']) + '</td><td><span class="chip ' + (r['출처'] === 'PDF' ? '' : 'gray') + '">' + esc(r['출처']) + '</span></td><td>' + (r['첨부 링크'] ? '<a href="' + esc(r['첨부 링크']) + '" target="_blank" rel="noopener">열기</a>' : '') + '</td></tr>'; }).reverse().join('') + '</tbody></table><p class="note">가장 최근 기록이 맨 위이고, 진행현황 보드의 현재 상태로 표시됩니다.</p>' : '<div class="empty">아직 기록이 없어요.</div>') + '</div>';
+  return h;
+}
+function inspTable(rows) {
+  var inq = 0, out = 0;
+  var h = '<div class="scroll"><table><thead><tr><th>바코드</th><th>컬러</th><th class="n">사이즈</th><th class="n">입고</th><th class="n">검수</th><th class="n">차이</th><th>전장 대조</th><th>상태</th></tr></thead><tbody>';
+  rows.forEach(function (r) {
+    inq += num(r['입고수량 (패킹리스트)']) || 0; out += num(r['검수수량 (3PL)']) || 0;
+    var st = r['상태'], sc = st === '일치' ? 'ok' : (st === '부족' || st === '초과') ? 'bad' : 'gray', vc = r['전장 대조'] === '전장 일치' ? 'ok' : 'bad';
+    h += '<tr><td class="mono">' + esc(r['바코드']) + '</td><td>' + esc(r['컬러']) + '</td><td class="n mono">' + esc(r['사이즈']) + '</td><td class="n mono">' + esc(r['입고수량 (패킹리스트)']) + '</td><td class="n mono">' + esc(r['검수수량 (3PL)']) + '</td><td class="n mono">' + esc(r['차이 (검수−입고)']) + '</td><td><span class="chip ' + vc + '">' + esc(r['전장 대조']) + '</span></td><td><span class="chip ' + sc + '">' + esc(st) + '</span></td></tr>';
+  });
+  return h + '<tr class="tot"><td>TOTAL</td><td></td><td></td><td class="n mono">' + inq + '</td><td class="n mono">' + out + '</td><td class="n mono">' + (out - inq) + '</td><td></td><td></td></tr></tbody></table></div>';
+}
+function packHtml(id, items, hdrs) {
+  var colors = []; items.forEach(function (r) { if (colors.indexOf(r['컬러']) < 0) colors.push(r['컬러']); });
+  var h = '';
+  colors.forEach(function (c) {
+    var hd = hdrs.filter(function (r) { return r['컬러'] === c; })[0] || {};
+    h += '<div class="pk"><div class="hd">' + esc(hd['패킹리스트 제목'] || id + '_' + c) + '</div><div style="padding:10px 14px;font-size:13px" class="sub">발송처 ' + esc(hd['발송처'] || '–') + ' · 발송일 ' + esc(hd['발송일'] || '–') + ' · 입고처 ' + esc(hd['입고처'] || '–') + ' · 입고일 ' + esc(hd['입고일'] || '–') + '</div><div class="scroll"><table><thead><tr><th>구분</th><th>부자재</th><th>적용 사이즈</th><th class="n">1장당</th><th class="n">기준수량</th><th class="n">여유수량</th><th class="n">발송수량</th></tr></thead><tbody>' +
+      items.filter(function (r) { return r['컬러'] === c; }).map(function (r) { return '<tr><td>' + esc(r['구분']) + '</td><td>' + esc(r['부자재']) + '</td><td>' + esc(r['적용 사이즈']) + '</td><td class="n mono">' + esc(r['1장당']) + '</td><td class="n mono">' + esc(r['기준수량']) + '</td><td class="n mono">' + esc(r['여유수량']) + '</td><td class="n mono"><b>' + esc(r['발송수량']) + '</b></td></tr>'; }).join('') + '</tbody></table></div></div>';
+  });
+  var tot = items.filter(function (r) { return r['부자재 합계 (생산건 전체)'] !== ''; });
+  h += '<h2 style="margin-top:16px">토탈수량 <span class="sub">같은 부자재명 자동 합산</span></h2><div class="scroll"><table><tbody>' + tot.map(function (r) { return '<tr><td>' + esc(r['부자재']) + '</td><td class="n mono"><b>' + esc(r['부자재 합계 (생산건 전체)']) + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
+  return h;
+}
+
+/* ---------- 3PL / 바코드 / 보관함 ---------- */
+function viewInbound() {
+  var rows = S.data.insp.filter(function (r) { return S.inboundFilter === 'all' || r['상태'] === '부족' || r['상태'] === '초과'; });
+  var all = S.data.insp, inq = 0, out = 0, ok = 0;
+  all.forEach(function (r) { inq += num(r['입고수량 (패킹리스트)']) || 0; out += num(r['검수수량 (3PL)']) || 0; if (r['전장 대조'] === '전장 일치') ok++; });
+  var diffN = all.filter(function (r) { return r['상태'] === '부족' || r['상태'] === '초과'; }).length;
+  var h = title('3PL 입고 검수 비교', '3PL 입고 검수 비교', '우리가 보낸 패킹리스트 수량과 3PL 검수완료 수량을 바코드별로 비교합니다.');
+  h += '<div class="stats"><div class="stat"><div class="l">입고수량 (패킹리스트)</div><div class="v mono">' + inq + '</div></div><div class="stat"><div class="l">검수수량 (3PL)</div><div class="v mono">' + out + '</div></div><div class="stat"><div class="l">차이</div><div class="v mono">' + (out - inq) + '</div></div><div class="stat"><div class="l">바코드 전장 대조</div><div class="v mono">' + ok + ' / ' + all.length + '</div></div></div>';
+  h += '<div class="card"><div class="row"><h2>바코드별 비교</h2><div class="seg"><button class="segb ' + (S.inboundFilter === 'all' ? 'on' : '') + '" data-inb="all">전체 ' + all.length + '</button><button class="segb ' + (S.inboundFilter === 'diff' ? 'on' : '') + '" data-inb="diff">차이 있음 ' + diffN + '</button></div></div>';
+  h += rows.length ? '<div class="scroll"><table><thead><tr><th>스타일 NO</th><th>바코드</th><th>상품명</th><th>컬러</th><th class="n">사이즈</th><th class="n">입고</th><th class="n">검수</th><th class="n">차이</th><th>전장 대조</th><th>상태</th></tr></thead><tbody>' + rows.map(function (r) {
+    var st = r['상태'], sc = st === '일치' ? 'ok' : (st === '부족' || st === '초과') ? 'bad' : 'gray', vc = r['전장 대조'] === '전장 일치' ? 'ok' : 'bad';
+    return '<tr><td class="mono">' + esc(r['스타일 NO (생산건ID)']) + '</td><td class="mono">' + esc(r['바코드']) + '</td><td>' + esc(r['상품명']) + '</td><td>' + esc(r['컬러']) + '</td><td class="n mono">' + esc(r['사이즈']) + '</td><td class="n mono">' + esc(r['입고수량 (패킹리스트)']) + '</td><td class="n mono">' + esc(r['검수수량 (3PL)']) + '</td><td class="n mono">' + esc(r['차이 (검수−입고)']) + '</td><td><span class="chip ' + vc + '">' + esc(r['전장 대조']) + '</span></td><td><span class="chip ' + sc + '">' + esc(st) + '</span></td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">수량 차이가 있는 바코드가 없어요.</div>';
+  return h + '</div>';
+}
+function viewBarcode() {
+  var q = S.q.trim().toLowerCase();
+  var all = S.data.barcodes.filter(function (r) { return (S.bcTab === 'old') === (r['구분'] === '기존'); });
+  var rows = all.filter(function (r) { return !q || String(r['바코드 번호']).toLowerCase().indexOf(q) >= 0 || String(r['스타일 NO (생산건ID)']).toLowerCase().indexOf(q) >= 0; });
+  var oc = S.data.barcodes.filter(function (r) { return r['구분'] === '기존'; }).length, nc = S.data.barcodes.length - oc;
+  var h = title('바코드 시스템 마스터', '바코드 시스템 마스터', '기존 데이터는 보관용이고, 시즌 중 새로 부여한 바코드는 신규로 쌓입니다.');
+  h += '<div class="seg" style="margin-bottom:16px"><button class="segb ' + (S.bcTab === 'old' ? 'on' : '') + '" data-bc="old">기존 데이터 · ' + oc + '건</button><button class="segb ' + (S.bcTab === 'new' ? 'on' : '') + '" data-bc="new">신규 데이터 · ' + nc + '건</button></div>';
+  h += '<div class="card"><div class="row" style="margin-bottom:12px"><h2 style="margin:0">' + (S.bcTab === 'old' ? '기존 바코드' : '신규 바코드') + '</h2><input type="search" id="q" placeholder="바코드 또는 스타일 NO" value="' + esc(S.q) + '" aria-label="검색"></div>' +
+    (rows.length ? '<div class="scroll"><table><thead><tr><th>스타일 NO</th><th>바코드</th><th>컬러</th><th class="n">사이즈</th><th>등록일</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="mono">' + esc(r['스타일 NO (생산건ID)']) + '</td><td class="mono">' + esc(r['바코드 번호']) + '</td><td>' + esc(r['컬러']) + '</td><td class="n mono">' + esc(r['사이즈']) + '</td><td class="mono">' + esc(r['등록일']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">' + (q ? '검색 결과가 없어요.' : '아직 등록된 바코드가 없어요.') + '</div>') + '</div>';
+  return h;
+}
+function viewArchive() {
+  var q = S.q.trim().toLowerCase(), d = S.data;
+  var files = d.archive.filter(function (f) {
+    if (!q) return true;
+    if (String(f['파일명']).toLowerCase().indexOf(q) >= 0) return true;
+    return d.barcodes.some(function (b) { return b['스타일 NO (생산건ID)'] === f['생산건ID'] && b['컬러'] === f['컬러'] && String(b['바코드 번호']).indexOf(q) >= 0; });
+  });
+  var h = title('패킹리스트 데이터', '패킹리스트 엑셀 보관함', '내보낸 패킹리스트 파일을 모아 둡니다. 파일을 펼치면 바코드 번호만 보여요.', '<input type="search" id="q" placeholder="파일명 또는 바코드 번호" value="' + esc(S.q) + '" aria-label="검색">');
+  h += '<div class="files">' + (files.length ? files.map(function (f) {
+    var codes = d.barcodes.filter(function (b) { return b['스타일 NO (생산건ID)'] === f['생산건ID'] && b['컬러'] === f['컬러']; });
+    var open = S.openFile === f['파일명'] || (q && codes.some(function (b) { return String(b['바코드 번호']).indexOf(q) >= 0; }));
+    return '<div class="f"><div class="fh"><button class="tgl" data-file="' + esc(f['파일명']) + '" aria-expanded="' + !!open + '"><span class="chip ok">XLS</span> <span class="mono">' + esc(f['파일명']) + '</span> <span class="sub">입고일 ' + esc(f['입고일']) + ' · 바코드 ' + codes.length + '개</span> ' + (open ? '▴' : '▾') + '</button>' +
+      (f['파일 링크 (드라이브)'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(f['파일 링크 (드라이브)']) + '">엑셀 열기</a>' : '<span class="chip gray">파일 링크 미등록</span>') + '</div>' +
+      (open ? '<div class="codes">' + codes.map(function (b) { return '<span class="code mono">' + esc(b['바코드 번호']) + '</span>'; }).join('') + '</div>' : '') + '</div>'; }).join('') : '<div class="card empty">검색 결과가 없어요.</div>') + '</div>';
+  return h;
+}
+
+/* ---------- 라우터 ---------- */
+function render() {
+  if (!S.data) return;
+  var hash = location.hash || '#/', app = $('#app'), html;
+  var m = /^#\/p\/(.+)$/.exec(hash);
+  if (m) html = viewProduct(decodeURIComponent(m[1]));
+  else if (hash === '#/board') html = viewBoard();
+  else if (hash === '#/inbound') html = viewInbound();
+  else if (hash === '#/barcode') html = viewBarcode();
+  else if (hash === '#/archive') html = viewArchive();
+  else html = viewHome();
+  app.innerHTML = html;
+  Array.prototype.forEach.call(document.querySelectorAll('.topnav a'), function (a) { a.classList.toggle('on', a.getAttribute('href') === hash || (a.getAttribute('href') === '#/items' && hash === '#/')); });
+  var q = $('#q'); if (q) q.addEventListener('input', function () { S.q = q.value; var pos = q.selectionStart; render(); var q2 = $('#q'); q2.focus(); q2.setSelectionRange(pos, pos); });
+}
+function banner() {
+  var b = $('#banner');
+  if (!DEMO || window.RENACTS) { b.innerHTML = ''; return; }
+  b.innerHTML = '<div class="b"><b>27SS 확인용</b><span>0_사이트 데이터_27SS 폴더의 제품 파일 3개에서 끌어온 화면입니다 (R26FJK06, R27SJK01, R27SJK02). 원가는 넣지 않았어요.</span></div>';
+  if ($('#demoCost')) $('#demoCost').onchange = function () { S.demoCost = this.checked; S.hasCost = S.demoCost; render(); };
+}
+document.addEventListener('keydown', function (e) { var c = e.target.closest && e.target.closest('[data-card]'); if (c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); c.click(); } });
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.kmore')) return;
+  var c = e.target.closest('[data-card]');
+  if (c) { var k = c.dataset.card; S.openCards[k] = !S.openCards[k]; c.classList.toggle('open', S.openCards[k]); c.setAttribute('aria-expanded', S.openCards[k]); return; }
+  var t = e.target.closest('[data-filter],[data-inb],[data-bc],[data-color],[data-file]'); if (!t) return;
+  if (t.dataset.filter) S.filter = t.dataset.filter;
+  else if (t.dataset.inb) S.inboundFilter = t.dataset.inb;
+  else if (t.dataset.bc) { S.bcTab = t.dataset.bc; S.q = ''; }
+  else if (t.dataset.color) S.openColors[t.dataset.color] = !S.openColors[t.dataset.color];
+  else if (t.dataset.file) S.openFile = S.openFile === t.dataset.file ? null : t.dataset.file;
+  render();
+});
+window.addEventListener('hashchange', function () { S.q = ''; render(); window.scrollTo(0, 0); });
+var sel = $('#season');
+sel.innerHTML = SEASONS.map(function (s) { return '<option>' + esc(s.label) + '</option>'; }).join('');
+sel.onchange = function () { S.season = sel.value; if (window.RENACTS) { location.href = window.SITE_ROOT + sel.value + location.hash; return; } load(); };
+banner();
+ensureLogin().then(load);
+})();
+</script>
 </body>
 </html>
