@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>리넥츠 시즌 관제탑</title>
+<title>GSB 시즌 관제탑</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -123,7 +123,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#/">리넥츠 시즌 관제탑</a>
+  <a class="brand" href="#/">GSB 시즌 관제탑</a>
   <nav class="topnav" aria-label="주 메뉴">
     <a href="#/board">진행 현황</a>
     <a href="#/items">아이템별</a>
@@ -154,7 +154,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   var seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
   var qs = new URLSearchParams(location.search).get('s') || '';
   var SEASON = (/^\d{2}(SS|FW)$/i.test(seg) ? seg : /^\d{2}(SS|FW)$/i.test(qs) ? qs : '').toUpperCase();
-  if (SEASON) document.title = '리넥츠 ' + SEASON + ' 관제탑';
+  if (SEASON) document.title = 'GSB ' + SEASON + ' 관제탑';
 
   function $(s) { return document.querySelector(s); }
   function sget(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -181,7 +181,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   /* 비밀번호 화면 */
   function lockForm(msg) {
     return new Promise(function (resolve) {
-      $('#app').innerHTML = '<form class="login card" id="lockf"><h1>리넥츠 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
+      $('#app').innerHTML = '<form class="login card" id="lockf"><h1>GSB 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
         '<p><input type="password" id="pw" autocomplete="current-password" aria-label="비밀번호" required></p>' +
         '<p class="err" id="err" role="alert">' + esc(msg || '') + '</p><p><button class="btn pri" type="submit">열기</button></p></form>';
       $('#pw').focus();
@@ -204,7 +204,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   function raw(label) {
     var season = (DATA.seasons || []).filter(function (s) { return s.label === label; })[0] || { items: [] };
     var T = {};
-    T['10_제품마스터'] = [['생산건ID', '품번', '차수', '시즌', '구분', '기획명', 'Flow FIX 제품명', '영문 판매명', '카테고리', '상태', '현재 단계', '최근 일자', '최근 내용', '기록 수', '컬러', '혼용율', '원산지(제조국)', '워싱 여부', '세트 연결', '봉제공장', 'FIT', '원단', '규격 · 중량', '워싱기법', '원가 NET TOTAL (VAT+)', '판가', '배수', '원가계산서 링크', '작업지시서 PDF 링크', '원부자재 발주 링크', '메모', '제품 시트']];
+    T['10_제품마스터'] = [['생산건ID', '품번', '차수', '시즌', '브랜드', '구분', '기획명', 'Flow FIX 제품명', '영문 판매명', '카테고리', '상태', '현재 단계', '최근 일자', '최근 내용', '기록 수', '컬러', '혼용율', '원산지(제조국)', '워싱 여부', '세트 연결', '봉제공장', 'FIT', '원단', '규격 · 중량', '워싱기법', '원가 NET TOTAL (VAT+)', '판가', '배수', '원가계산서 링크', '작업지시서 PDF 링크', '원부자재 발주 링크', '메모', '제품 시트']];
     T['11_컬러'] = [['생산건ID', '컬러', '작업지시서 컬러코드', '패킹리스트·바코드 컬러코드', '비고', '컬러 순번', '조회 키', '컬러 누적 목록']];
     T['12_히스토리'] = [['생산건ID', '일자', '단계', '내용', '출처', '첨부 링크', '순번', '최신', '최신 키', '단계 키', '순번 키', '제품명', '작성자']];
     T['13_작업지시서'] = [['생산건ID', '컬러', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '합계', '비고', '조회 키']];
@@ -220,7 +220,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
     (season.items || []).forEach(function (it) {
       var D = it.detail || { colors: [], info: {}, history: [], qty: [], barcodes: [], tpl: { rows: [] } }, I = D.info || {};
       var pid = it.code + '_' + (it.round || 'NEW'), multi = (D.colors || []).length > 1;
-      T['10_제품마스터'].push([pid, it.code, it.round, it.season || label, it.type, it.plan, it.name, it.name, it.category, it.status, strip(it.stage), it.updated, it.recent, (D.history || []).length, it.color,
+      T['10_제품마스터'].push([pid, it.code, it.round, it.season || label, it.brand || '리넥츠', it.type, it.plan, it.name, it.name, it.category, it.status, strip(it.stage), it.updated, it.recent, (D.history || []).length, it.color,
         I.mixOuter || '', I.origin || '', I.wash || '', I.set || '', I.factory || '', I.fit || '', I.fabric || '', I.spec || '', I.washMethod || '', '', '', '', '', '', '', it.memo || '', it.url || '']);
       var acc = [];
       (D.colors || []).forEach(function (c, k) { acc.push(c.code); T['11_컬러'].push([pid, c.code, c.code, c.code, c.name, k + 1, pid + '#' + (k + 1), acc.join(', ')]); });
@@ -406,6 +406,12 @@ function title(eyebrow, h, sub, right) {
   return '<div class="row" style="margin-bottom:20px"><div><div class="eyebrow">' + esc(eyebrow) + '</div><h1>' + esc(h) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + (right || '') + '</div>';
 }
 function stageIdx(p) { return S.data.settings.stages.indexOf(p['현재 단계']); }
+function matchesFilter(p) {
+  if (S.filter === 'all') return true;
+  if (S.filter === '신규' || S.filter === '리오더') return p['구분'] === S.filter;
+  if (S.filter === '르노드' || S.filter === '리넥츠') return (p['브랜드'] || '리넥츠') === S.filter;
+  return true;
+}
 
 /* ---------- 홈 ---------- */
 function viewHome() {
@@ -438,14 +444,15 @@ function viewItems() { return viewHome(); }
 function viewBoard() {
   var d = S.data, ST = d.settings.stages;
   var P = d.products.filter(function (p) { return p['상태'] !== '드랍'; });
-  var rows = [{ k: '신규', label: '신규' }, { k: '리오더', label: '리오더' }].filter(function (r) { return S.filter === 'all' || S.filter === r.k; });
-  var shown = P.filter(function (p) { return S.filter === 'all' || p['구분'] === S.filter; });
+  var isTypeFilter = (S.filter === '신규' || S.filter === '리오더');
+  var rows = [{ k: '신규', label: '신규' }, { k: '리오더', label: '리오더' }].filter(function (r) { return !isTypeFilter || S.filter === r.k; });
+  var shown = P.filter(function (p) { return matchesFilter(p); });
   var h = title('진행관리 보드', '시즌 진행현황', '카드를 누르면 가장 마지막 진행사항과 메모가 펼쳐지고, 펼친 카드의 \'상세 보기\'로 제품 상세에 들어갑니다. 진행 확정 전인 제품은 카드에 보류 표시가 붙어요.',
-    '<div class="seg" role="group" aria-label="구분 필터">' + [['all','전체'],['신규','신규'],['리오더','리오더']].map(function (t) { return '<button class="segb ' + (S.filter === t[0] ? 'on' : '') + '" data-filter="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>');
+    '<div class="seg" role="group" aria-label="구분 필터">' + [['all','전체'],['신규','신규'],['리오더','리오더'],['르노드','르노드'],['리넥츠','리넥츠']].map(function (t) { return '<button class="segb ' + (S.filter === t[0] ? 'on' : '') + '" data-filter="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>');
   h += '<div class="scroll"><div class="grid"><div></div>' + ST.map(function (n, i) { return '<div class="sh"><span>0' + (i + 1) + ' ' + esc(n) + '</span><span class="mono">' + shown.filter(function (p) { return stageIdx(p) === i; }).length + '</span></div>'; }).join('') + '</div>';
   rows.forEach(function (r) {
     h += '<div class="grid"><div class="rl"><b>' + r.label + '</b><span>' + esc(S.season) + '</span></div>' + ST.map(function (n, i) {
-      var cards = P.filter(function (p) { return p['구분'] === r.k && stageIdx(p) === i; });
+      var cards = P.filter(function (p) { return p['구분'] === r.k && stageIdx(p) === i && matchesFilter(p); });
       return '<div class="col">' + (cards.length ? cards.map(function (p) {
         var l = lastHist(pid(p));
         return '<div class="kcard' + (S.openCards[pid(p)] ? ' open' : '') + '" data-card="' + esc(pid(p)) + '" role="button" tabindex="0" aria-expanded="' + !!S.openCards[pid(p)] + '"><div style="display:flex;justify-content:space-between;gap:6px"><span class="mono" style="font-size:12px;font-weight:500">' + esc(String(p['품번']).indexOf('미부여') === 0 ? '품번 미부여' : p['품번']) + '</span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + (p['상태'] === '보류' ? '<span class="chip warn">보류</span>' : '') + '<span class="chip">' + esc(ptag(p)) + '</span></span></div>' +
