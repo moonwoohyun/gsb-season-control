@@ -65,6 +65,10 @@ h2{font-size:17px;margin:0 0 12px}
 .hold{display:flex;flex-wrap:wrap;gap:10px;background:#E3E4EC;border-radius:10px;padding:10px;margin-top:12px}
 .hitem{background:#fff;border:1px solid #DAD8CD;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:center}
 .scroll{overflow-x:auto}
+.sizetbl{table-layout:fixed}
+.sizetbl th,.sizetbl td{text-align:center}
+.sizetbl td,.sizetbl th{border-right:1px solid #F0EEE6}
+.sizetbl th:last-child,.sizetbl td:last-child{border-right:none}
 /* menu */
 .menu details{border-bottom:1px solid #D8D6CC}
 .menu summary{list-style:none;cursor:pointer;padding:14px 4px;font-size:18px;font-weight:500;display:flex;justify-content:space-between;min-height:48px;align-items:center}
@@ -527,7 +531,7 @@ function viewProduct(id) {
     (p['메모'] ? '<p class="note">메모: ' + esc(p['메모']) + '</p>' : '') + '</div></div>';
   h += '<div class="card"><div class="row"><h2>단계별 수량 추적</h2><span class="sub">워싱 ' + esc(p['워싱 여부'] || '미지정') + ' · 각 칸 아래 표시는 바로 앞 단계 대비입니다. 컬러를 누르면 사이즈별로 펼쳐집니다.</span></div>' + qtyHtml(id, p['워싱 여부']) + '</div>';
   var sz = d.sizes[id] || [];
-  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th class="n">5</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4,5].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
+  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table class="sizetbl"><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th class="n">5</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4,5].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
   var ins = d.inspById[id] || [];
   h += '<div class="card"><h2>3PL 입고 검수</h2>' + (ins.length ? inspTable(ins) : '<div class="empty">아직 3PL 입고 기록이 없어요.</div>') + '</div>';
   var items = d.packItems[id] || [];
