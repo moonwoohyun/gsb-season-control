@@ -87,9 +87,6 @@ h2{font-size:17px;margin:0 0 12px}
 .step{flex:1 1 130px;border-radius:10px;padding:12px 16px;background:var(--navy);color:#fff;min-height:64px}
 .step.cur{background:#fff;color:var(--navy);border:2px solid var(--navy)}.step.todo{background:#E9E8E0;color:var(--mute)}
 .step .sn{font-size:11px;opacity:.8}.step .st{font-weight:700;font-size:14px}.step .sd{font-size:11px;opacity:.85}
-.two{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
-.photo{flex:0 0 300px;height:300px;border-radius:12px;background:#EFEDE4;border:1px dashed #CFCCC0;display:flex;align-items:center;justify-content:center;color:var(--mute);text-align:center;overflow:hidden;padding:12px;font-size:13px}
-.photo img{width:100%;height:100%;object-fit:contain}
 .kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:8px 0;border-bottom:1px solid #F0EEE6;font-size:13px}
 .kv span:first-child{color:var(--mute)}
 .info{flex:1 1 480px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:28px}
@@ -121,7 +118,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
 .files .fh{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}
 .codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;padding:4px 16px 16px}
 .code{font-size:13px;background:#F6F5F0;border:1px solid var(--line);border-radius:6px;padding:8px 12px;text-align:center}
-@media (max-width:720px){.wrap{padding:20px 16px 60px}.top{padding:8px 16px}.photo{flex-basis:100%}}
+@media (max-width:720px){.wrap{padding:20px 16px 60px}.top{padding:8px 16px}}
 </style>
 </head>
 <body>
@@ -517,8 +514,7 @@ function viewProduct(id) {
   if (!p) return '<div class="card"><h2>제품을 찾을 수 없어요</h2><p><a href="#/">관제탑으로 돌아가기</a></p></div>';
   var ST = d.settings.stages, cur = stageIdx(p), hist = d.hist[id] || [];
   var hdrs = d.packHdr.filter(function (r) { return r['생산건ID'] === id; });
-  var photo = ''; hdrs.forEach(function (r) { if (!photo && r['메인사진 링크']) photo = r['메인사진 링크']; });
-  var link = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>' : '<span class="chip gray">' + t + ' 미등록</span>'; };
+    var link = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>' : '<span class="chip gray">' + t + ' 미등록</span>'; };
   var h = '<div class="crumb"><a href="#/">← 관제탑</a> · <a href="#/board">진행현황</a> · ' + esc((p['카테고리'] || '미분류') + ' › ' + (p['기획명'] || id)) + '</div>';
   h += title(ptag(p) + ' · ' + p['시즌'], p['기획명'] || id, '<span class="mono">' + esc(id) + '</span>' + (p['상태'] !== '진행' ? ' · <span class="chip bad">' + esc(p['상태']) + '</span>' : ''),
     '<div style="display:flex;gap:10px;flex-wrap:wrap">' + (p['제품 시트'] ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(p['제품 시트']) + '">제품 시트 열기</a>' : '') + (p['원가계산서 링크'] && S.hasCost ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원가계산서 링크']) + '">원가계산서 열기</a>' : '') + (p['작업지시서 PDF 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['작업지시서 PDF 링크']) + '">작업지시서 PDF</a>' : '') + (p['원부자재 발주 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원부자재 발주 링크']) + '">원부자재 발주</a>' : '') + '</div>');
