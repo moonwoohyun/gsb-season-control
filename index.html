@@ -239,6 +239,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
       });
       (D.barcodes || []).forEach(function (b) { T['30_바코드마스터'].push([b.kind || '신규', pid, b.color, b.size, b.barcode, b.date, b.memo, '', '']); });
       ((D.tpl && D.tpl.rows) || []).forEach(function (r) { T['20_3PL검수'].push([D.tpl.date, pid, r.barcode, r.packed, r.checked, it.name || it.plan, r.color, r.size, r.diff, '', r.result, '', '']); });
+      (D.sizeTable || []).forEach(function (s, k) { T['14_사이즈치수'].push([pid, s.item, s.sizes[0] || '', s.sizes[1] || '', s.sizes[2] || '', s.sizes[3] || '', s.unit || '', k + 1, pid + '#' + (k + 1)]); });
       (D.colors || []).forEach(function (c) { T['21_패킹리스트'].push(['', '', '', '', '', '', '', '', '', '', '', '', pid, c.code, it.code + '_' + c.code, '리넥츠 사무실', '', I.factory || '', '', '', pid + '|' + c.code]); });
     });
     return T;
