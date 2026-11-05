@@ -205,7 +205,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
     T['11_컬러'] = [['생산건ID', '컬러', '작업지시서 컬러코드', '패킹리스트·바코드 컬러코드', '비고', '컬러 순번', '조회 키', '컬러 누적 목록']];
     T['12_히스토리'] = [['생산건ID', '일자', '단계', '내용', '출처', '첨부 링크', '순번', '최신', '최신 키', '단계 키', '순번 키', '제품명', '작성자']];
     T['13_작업지시서'] = [['생산건ID', '컬러', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '합계', '비고', '조회 키']];
-    T['14_사이즈치수'] = [['생산건ID', '부위', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '비고', '부위 순번', '조회 키']];
+    T['14_사이즈치수'] = [['생산건ID', '부위', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '사이즈 5', '비고', '부위 순번', '조회 키']];
     T['15_이동수량'] = [['생산건ID', '컬러', '사이즈', '요청수량', '재단', '워싱처 입고', '완성집 입고', '수납용 입고', '3PL 입고', '워싱 여부', '재단 증감', '워싱처 증감', '완성집 증감', '수납용 증감', '3PL 증감', '부족 · 초과 요약', '증빙 링크', '입력일', '메모']];
     T['20_3PL검수'] = [['입고일', '스타일 NO (생산건ID)', '바코드', '입고수량 (패킹리스트)', '검수수량 (3PL)', '상품명', '컬러', '사이즈', '차이 (검수−입고)', '전장 대조', '상태', '검수파일 링크', '메모']];
     T['21_패킹리스트'] = [['생산건ID', '컬러', '구분', '부자재', '적용 사이즈', '1장당', '적용수량', '기준수량', '여유수량', '발송수량', '부자재 합계 (생산건 전체)', '', '생산건ID', '컬러', '패킹리스트 제목', '발송처', '발송일', '입고처', '입고일', '메인사진 링크', '조회 키']];
@@ -239,7 +239,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
       });
       (D.barcodes || []).forEach(function (b) { T['30_바코드마스터'].push([b.kind || '신규', pid, b.color, b.size, b.barcode, b.date, b.memo, '', '']); });
       ((D.tpl && D.tpl.rows) || []).forEach(function (r) { T['20_3PL검수'].push([D.tpl.date, pid, r.barcode, r.packed, r.checked, it.name || it.plan, r.color, r.size, r.diff, '', r.result, '', '']); });
-      (D.sizeTable || []).forEach(function (s, k) { T['14_사이즈치수'].push([pid, s.item, s.sizes[0] || '', s.sizes[1] || '', s.sizes[2] || '', s.sizes[3] || '', s.unit || '', k + 1, pid + '#' + (k + 1)]); });
+      (D.sizeTable || []).forEach(function (s, k) { T['14_사이즈치수'].push([pid, s.item, s.sizes[0] || '', s.sizes[1] || '', s.sizes[2] || '', s.sizes[3] || '', s.sizes[4] || '', s.unit || '', k + 1, pid + '#' + (k + 1)]); });
       (D.colors || []).forEach(function (c) { T['21_패킹리스트'].push(['', '', '', '', '', '', '', '', '', '', '', '', pid, c.code, it.code + '_' + c.code, '리넥츠 사무실', '', I.factory || '', '', '', pid + '|' + c.code]); });
     });
     return T;
@@ -527,7 +527,7 @@ function viewProduct(id) {
     (p['메모'] ? '<p class="note">메모: ' + esc(p['메모']) + '</p>' : '') + '</div></div>';
   h += '<div class="card"><div class="row"><h2>단계별 수량 추적</h2><span class="sub">워싱 ' + esc(p['워싱 여부'] || '미지정') + ' · 각 칸 아래 표시는 바로 앞 단계 대비입니다. 컬러를 누르면 사이즈별로 펼쳐집니다.</span></div>' + qtyHtml(id, p['워싱 여부']) + '</div>';
   var sz = d.sizes[id] || [];
-  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n mono">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
+  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th class="n">5</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4,5].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
   var ins = d.inspById[id] || [];
   h += '<div class="card"><h2>3PL 입고 검수</h2>' + (ins.length ? inspTable(ins) : '<div class="empty">아직 3PL 입고 기록이 없어요.</div>') + '</div>';
   var items = d.packItems[id] || [];
