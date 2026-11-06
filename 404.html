@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>리넥츠 시즌 관제탑</title>
+<title>GSB 시즌 관제탑</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -65,6 +65,12 @@ h2{font-size:17px;margin:0 0 12px}
 .hold{display:flex;flex-wrap:wrap;gap:10px;background:#E3E4EC;border-radius:10px;padding:10px;margin-top:12px}
 .hitem{background:#fff;border:1px solid #DAD8CD;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:center}
 .scroll{overflow-x:auto}
+.sizetbl{table-layout:fixed}
+.sizetbl th,.sizetbl td{text-align:center}
+.sizetbl td,.sizetbl th{border-right:1px solid #F0EEE6}
+.sizetbl th:last-child,.sizetbl td:last-child{border-right:none}
+.sizetbl td.n,.sizetbl th.n{text-align:center}
+.sizetbl td,.sizetbl th{border-right-color:#D8D6CC}
 /* menu */
 .menu details{border-bottom:1px solid #D8D6CC}
 .menu summary{list-style:none;cursor:pointer;padding:14px 4px;font-size:18px;font-weight:500;display:flex;justify-content:space-between;min-height:48px;align-items:center}
@@ -81,9 +87,6 @@ h2{font-size:17px;margin:0 0 12px}
 .step{flex:1 1 130px;border-radius:10px;padding:12px 16px;background:var(--navy);color:#fff;min-height:64px}
 .step.cur{background:#fff;color:var(--navy);border:2px solid var(--navy)}.step.todo{background:#E9E8E0;color:var(--mute)}
 .step .sn{font-size:11px;opacity:.8}.step .st{font-weight:700;font-size:14px}.step .sd{font-size:11px;opacity:.85}
-.two{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
-.photo{flex:0 0 300px;height:300px;border-radius:12px;background:#EFEDE4;border:1px dashed #CFCCC0;display:flex;align-items:center;justify-content:center;color:var(--mute);text-align:center;overflow:hidden;padding:12px;font-size:13px}
-.photo img{width:100%;height:100%;object-fit:contain}
 .kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:8px 0;border-bottom:1px solid #F0EEE6;font-size:13px}
 .kv span:first-child{color:var(--mute)}
 .info{flex:1 1 480px;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));column-gap:28px}
@@ -115,12 +118,12 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
 .files .fh{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px}
 .codes{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px;padding:4px 16px 16px}
 .code{font-size:13px;background:#F6F5F0;border:1px solid var(--line);border-radius:6px;padding:8px 12px;text-align:center}
-@media (max-width:720px){.wrap{padding:20px 16px 60px}.top{padding:8px 16px}.photo{flex-basis:100%}}
+@media (max-width:720px){.wrap{padding:20px 16px 60px}.top{padding:8px 16px}}
 </style>
 </head>
 <body>
 <header class="top">
-  <a class="brand" href="#/">리넥츠 시즌 관제탑</a>
+  <a class="brand" href="#/">GSB 시즌 관제탑</a>
   <nav class="topnav" aria-label="주 메뉴">
     <a href="#/board">진행 현황</a>
     <a href="#/items">아이템별</a>
@@ -147,11 +150,12 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   var API = (window.SITE_CONFIG && window.SITE_CONFIG.api) || '';
   if (!API) return; // 서버 주소가 없으면 예전 데모처럼 동작
   var PW = 'renacts.pw';
+  var EKEY = 'renacts.ekey';
   var DATA = null;
   var seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
   var qs = new URLSearchParams(location.search).get('s') || '';
   var SEASON = (/^\d{2}(SS|FW)$/i.test(seg) ? seg : /^\d{2}(SS|FW)$/i.test(qs) ? qs : '').toUpperCase();
-  if (SEASON) document.title = '리넥츠 ' + SEASON + ' 관제탑';
+  if (SEASON) document.title = 'GSB ' + SEASON + ' 관제탑';
 
   function $(s) { return document.querySelector(s); }
   function sget(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
@@ -169,6 +173,10 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
     t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
     clearTimeout(t._h); t._h = setTimeout(function () { t.className = ''; }, 5000);
   }
+  function editApi(op, args, key) {
+    return fetch(API, { method: 'POST', body: JSON.stringify({ action: 'edit', key: key, op: op, args: args, via: '사이트' }), redirect: 'follow' })
+      .then(function (r) { return r.json(); });
+  }
   function use(data) {
     DATA = data;
     $('#upd').textContent = '최신화 ' + (data.updated || '');
@@ -178,7 +186,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   /* 비밀번호 화면 */
   function lockForm(msg) {
     return new Promise(function (resolve) {
-      $('#app').innerHTML = '<form class="login card" id="lockf"><h1>리넥츠 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
+      $('#app').innerHTML = '<form class="login card" id="lockf"><h1>GSB 시즌 관제탑</h1><p class="sub">팀 공용 비밀번호를 입력하세요.</p>' +
         '<p><input type="password" id="pw" autocomplete="current-password" aria-label="비밀번호" required></p>' +
         '<p class="err" id="err" role="alert">' + esc(msg || '') + '</p><p><button class="btn pri" type="submit">열기</button></p></form>';
       $('#pw').focus();
@@ -201,11 +209,11 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   function raw(label) {
     var season = (DATA.seasons || []).filter(function (s) { return s.label === label; })[0] || { items: [] };
     var T = {};
-    T['10_제품마스터'] = [['생산건ID', '품번', '차수', '시즌', '구분', '기획명', 'Flow FIX 제품명', '영문 판매명', '카테고리', '상태', '현재 단계', '최근 일자', '최근 내용', '기록 수', '컬러', '혼용율', '원산지(제조국)', '워싱 여부', '세트 연결', '봉제공장', 'FIT', '원단', '규격 · 중량', '워싱기법', '원가 NET TOTAL (VAT+)', '판가', '배수', '원가계산서 링크', '작업지시서 PDF 링크', '원부자재 발주 링크', '메모', '제품 시트']];
+    T['10_제품마스터'] = [['생산건ID', '품번', '차수', '시즌', '브랜드', '구분', '기획명', 'Flow FIX 제품명', '영문 판매명', '카테고리', '상태', '현재 단계', '최근 일자', '최근 내용', '기록 수', '컬러', '혼용율', '원산지(제조국)', '워싱 여부', '세트 연결', '봉제공장', 'FIT', '원단', '규격 · 중량', '워싱기법', '원가 NET TOTAL (VAT+)', '판가', '배수', '원가계산서 링크', '작업지시서 PDF 링크', '원부자재 발주 링크', '메모', '제품 시트']];
     T['11_컬러'] = [['생산건ID', '컬러', '작업지시서 컬러코드', '패킹리스트·바코드 컬러코드', '비고', '컬러 순번', '조회 키', '컬러 누적 목록']];
     T['12_히스토리'] = [['생산건ID', '일자', '단계', '내용', '출처', '첨부 링크', '순번', '최신', '최신 키', '단계 키', '순번 키', '제품명', '작성자']];
     T['13_작업지시서'] = [['생산건ID', '컬러', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '합계', '비고', '조회 키']];
-    T['14_사이즈치수'] = [['생산건ID', '부위', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '비고', '부위 순번', '조회 키']];
+    T['14_사이즈치수'] = [['생산건ID', '부위', '사이즈 1', '사이즈 2', '사이즈 3', '사이즈 4', '사이즈 5', '비고', '부위 순번', '조회 키']];
     T['15_이동수량'] = [['생산건ID', '컬러', '사이즈', '요청수량', '재단', '워싱처 입고', '완성집 입고', '수납용 입고', '3PL 입고', '워싱 여부', '재단 증감', '워싱처 증감', '완성집 증감', '수납용 증감', '3PL 증감', '부족 · 초과 요약', '증빙 링크', '입력일', '메모']];
     T['20_3PL검수'] = [['입고일', '스타일 NO (생산건ID)', '바코드', '입고수량 (패킹리스트)', '검수수량 (3PL)', '상품명', '컬러', '사이즈', '차이 (검수−입고)', '전장 대조', '상태', '검수파일 링크', '메모']];
     T['21_패킹리스트'] = [['생산건ID', '컬러', '구분', '부자재', '적용 사이즈', '1장당', '적용수량', '기준수량', '여유수량', '발송수량', '부자재 합계 (생산건 전체)', '', '생산건ID', '컬러', '패킹리스트 제목', '발송처', '발송일', '입고처', '입고일', '메인사진 링크', '조회 키']];
@@ -217,7 +225,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
     (season.items || []).forEach(function (it) {
       var D = it.detail || { colors: [], info: {}, history: [], qty: [], barcodes: [], tpl: { rows: [] } }, I = D.info || {};
       var pid = it.code + '_' + (it.round || 'NEW'), multi = (D.colors || []).length > 1;
-      T['10_제품마스터'].push([pid, it.code, it.round, it.season || label, it.type, it.plan, it.name, it.name, it.category, it.status, strip(it.stage), it.updated, it.recent, (D.history || []).length, it.color,
+      T['10_제품마스터'].push([pid, it.code, it.round, it.season || label, it.brand || '리넥츠', it.type, it.plan, it.name, it.name, it.category, it.status, strip(it.stage), it.updated, it.recent, (D.history || []).length, it.color,
         I.mixOuter || '', I.origin || '', I.wash || '', I.set || '', I.factory || '', I.fit || '', I.fabric || '', I.spec || '', I.washMethod || '', '', '', '', '', '', '', it.memo || '', it.url || '']);
       var acc = [];
       (D.colors || []).forEach(function (c, k) { acc.push(c.code); T['11_컬러'].push([pid, c.code, c.code, c.code, c.name, k + 1, pid + '#' + (k + 1), acc.join(', ')]); });
@@ -239,6 +247,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
       });
       (D.barcodes || []).forEach(function (b) { T['30_바코드마스터'].push([b.kind || '신규', pid, b.color, b.size, b.barcode, b.date, b.memo, '', '']); });
       ((D.tpl && D.tpl.rows) || []).forEach(function (r) { T['20_3PL검수'].push([D.tpl.date, pid, r.barcode, r.packed, r.checked, it.name || it.plan, r.color, r.size, r.diff, '', r.result, '', '']); });
+      (D.sizeTable || []).forEach(function (s, k) { T['14_사이즈치수'].push([pid, s.item, s.sizes[0] || '', s.sizes[1] || '', s.sizes[2] || '', s.sizes[3] || '', s.sizes[4] || '', s.unit || '', k + 1, pid + '#' + (k + 1)]); });
       (D.colors || []).forEach(function (c) { T['21_패킹리스트'].push(['', '', '', '', '', '', '', '', '', '', '', '', pid, c.code, it.code + '_' + c.code, '리넥츠 사무실', '', I.factory || '', '', '', pid + '|' + c.code]); });
     });
     return T;
@@ -252,7 +261,12 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
       var go = pw ? api('get', pw).then(function (d) { use(d); return d; }).catch(function (e) { if (e.auth) sdel(PW); return lockForm(e.auth ? '' : e.message); }) : lockForm('');
       return go.then(labels);
     },
-    reload: null
+    reload: null,
+    toast: toast,
+    getEditKey: function () { return sget(EKEY); },
+    setEditKey: function (k) { sset(EKEY, k); },
+    clearEditKey: function () { sdel(EKEY); },
+    editField: function (code, label, value, key) { return editApi('field-set', { code: code, tab: '기본정보', label: label, value: value }, key); }
   };
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -276,6 +290,7 @@ var DEMO = !CFG.CLIENT_ID;
 var TABS = ['10_제품마스터','11_컬러','12_히스토리','13_작업지시서','14_사이즈치수','15_이동수량','20_3PL검수','21_패킹리스트','22_패킹보관함','30_바코드마스터','99_설정'];
 var MOVE_STAGES = ['작업 요청','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
 var MOVE_COLS = ['요청수량','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
+var STAGE_FULL = ['01_개발진행중', '02_패턴', '03_프로토샘플', '04_QC · 재QC', '05_APP', '06_메인수납', '07_종결', '08_드랍'];
 var CMAP = { 'NAVY':['#2A3560','#fff'],'BLUE STRIPE':['#9DB4D6','#1B2A3D'],'BEIGE':['#D9C3A0','#2A2218'], 'GN':['#2F5D43','#fff'],'NV':['#2A3560','#fff'],'BE':['#D9C3A0','#2A2218'],'LBU':['#BCD0E6','#1B2A3D'],'GREEN MULTI':['#2F5D43','#fff'],'WHITE MULTI':['#ECEAE2','#2A2A28'],'RED MULTI':['#8E2A25','#fff'],'ORANGE MULTI':['#E0954F','#2A1A0A'] };
 
 var S = { season: SEASONS[0].label, token: null, data: null, cost: {}, hasCost: false, demoCost: false, openColors: {}, filter: 'all', inboundFilter: 'all', bcTab: 'old', q: '', openFile: null, openCards: {} };
@@ -402,6 +417,12 @@ function title(eyebrow, h, sub, right) {
   return '<div class="row" style="margin-bottom:20px"><div><div class="eyebrow">' + esc(eyebrow) + '</div><h1>' + esc(h) + '</h1>' + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>' + (right || '') + '</div>';
 }
 function stageIdx(p) { return S.data.settings.stages.indexOf(p['현재 단계']); }
+function matchesFilter(p) {
+  if (S.filter === 'all') return true;
+  if (S.filter === '신규' || S.filter === '리오더') return p['구분'] === S.filter;
+  if (S.filter === '르노드' || S.filter === '리넥츠') return (p['브랜드'] || '리넥츠') === S.filter;
+  return true;
+}
 
 /* ---------- 홈 ---------- */
 function viewHome() {
@@ -434,14 +455,15 @@ function viewItems() { return viewHome(); }
 function viewBoard() {
   var d = S.data, ST = d.settings.stages;
   var P = d.products.filter(function (p) { return p['상태'] !== '드랍'; });
-  var rows = [{ k: '신규', label: '신규' }, { k: '리오더', label: '리오더' }].filter(function (r) { return S.filter === 'all' || S.filter === r.k; });
-  var shown = P.filter(function (p) { return S.filter === 'all' || p['구분'] === S.filter; });
+  var isTypeFilter = (S.filter === '신규' || S.filter === '리오더');
+  var rows = [{ k: '신규', label: '신규' }, { k: '리오더', label: '리오더' }].filter(function (r) { return !isTypeFilter || S.filter === r.k; });
+  var shown = P.filter(function (p) { return matchesFilter(p); });
   var h = title('진행관리 보드', '시즌 진행현황', '카드를 누르면 가장 마지막 진행사항과 메모가 펼쳐지고, 펼친 카드의 \'상세 보기\'로 제품 상세에 들어갑니다. 진행 확정 전인 제품은 카드에 보류 표시가 붙어요.',
-    '<div class="seg" role="group" aria-label="구분 필터">' + [['all','전체'],['신규','신규'],['리오더','리오더']].map(function (t) { return '<button class="segb ' + (S.filter === t[0] ? 'on' : '') + '" data-filter="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>');
+    '<div class="seg" role="group" aria-label="구분 필터">' + [['all','전체'],['신규','신규'],['리오더','리오더'],['르노드','르노드'],['리넥츠','리넥츠']].map(function (t) { return '<button class="segb ' + (S.filter === t[0] ? 'on' : '') + '" data-filter="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>');
   h += '<div class="scroll"><div class="grid"><div></div>' + ST.map(function (n, i) { return '<div class="sh"><span>0' + (i + 1) + ' ' + esc(n) + '</span><span class="mono">' + shown.filter(function (p) { return stageIdx(p) === i; }).length + '</span></div>'; }).join('') + '</div>';
   rows.forEach(function (r) {
     h += '<div class="grid"><div class="rl"><b>' + r.label + '</b><span>' + esc(S.season) + '</span></div>' + ST.map(function (n, i) {
-      var cards = P.filter(function (p) { return p['구분'] === r.k && stageIdx(p) === i; });
+      var cards = P.filter(function (p) { return p['구분'] === r.k && stageIdx(p) === i && matchesFilter(p); });
       return '<div class="col">' + (cards.length ? cards.map(function (p) {
         var l = lastHist(pid(p));
         return '<div class="kcard' + (S.openCards[pid(p)] ? ' open' : '') + '" data-card="' + esc(pid(p)) + '" role="button" tabindex="0" aria-expanded="' + !!S.openCards[pid(p)] + '"><div style="display:flex;justify-content:space-between;gap:6px"><span class="mono" style="font-size:12px;font-weight:500">' + esc(String(p['품번']).indexOf('미부여') === 0 ? '품번 미부여' : p['품번']) + '</span><span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">' + (p['상태'] === '보류' ? '<span class="chip warn">보류</span>' : '') + '<span class="chip">' + esc(ptag(p)) + '</span></span></div>' +
@@ -510,23 +532,28 @@ function viewProduct(id) {
   if (!p) return '<div class="card"><h2>제품을 찾을 수 없어요</h2><p><a href="#/">관제탑으로 돌아가기</a></p></div>';
   var ST = d.settings.stages, cur = stageIdx(p), hist = d.hist[id] || [];
   var hdrs = d.packHdr.filter(function (r) { return r['생산건ID'] === id; });
-  var photo = ''; hdrs.forEach(function (r) { if (!photo && r['메인사진 링크']) photo = r['메인사진 링크']; });
-  var link = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>' : '<span class="chip gray">' + t + ' 미등록</span>'; };
+    var link = function (u, t) { return u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + t + '</a>' : '<span class="chip gray">' + t + ' 미등록</span>'; };
   var h = '<div class="crumb"><a href="#/">← 관제탑</a> · <a href="#/board">진행현황</a> · ' + esc((p['카테고리'] || '미분류') + ' › ' + (p['기획명'] || id)) + '</div>';
   h += title(ptag(p) + ' · ' + p['시즌'], p['기획명'] || id, '<span class="mono">' + esc(id) + '</span>' + (p['상태'] !== '진행' ? ' · <span class="chip bad">' + esc(p['상태']) + '</span>' : ''),
     '<div style="display:flex;gap:10px;flex-wrap:wrap">' + (p['제품 시트'] ? '<a class="btn pri" target="_blank" rel="noopener" href="' + esc(p['제품 시트']) + '">제품 시트 열기</a>' : '') + (p['원가계산서 링크'] && S.hasCost ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원가계산서 링크']) + '">원가계산서 열기</a>' : '') + (p['작업지시서 PDF 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['작업지시서 PDF 링크']) + '">작업지시서 PDF</a>' : '') + (p['원부자재 발주 링크'] ? '<a class="btn" target="_blank" rel="noopener" href="' + esc(p['원부자재 발주 링크']) + '">원부자재 발주</a>' : '') + '</div>');
   h += '<div class="steps">' + ST.map(function (n, i) {
     var f = hist.filter(function (x) { return x['단계'] === n; })[0];
     return '<div class="step ' + (cur < 0 ? 'todo' : i < cur ? '' : i === cur ? 'cur' : 'todo') + '"><div class="sn">0' + (i + 1) + '</div><div class="st">' + esc(n) + '</div><div class="sd">' + (f ? esc(md(f['일자'])) : i === cur ? '진행중' : '&nbsp;') + '</div></div>'; }).join('') + '</div>';
+  if (window.RENACTS && window.RENACTS.editField) {
+    h += '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><strong style="margin-right:4px">단계 변경</strong>' +
+      '<select id="stageSel">' + STAGE_FULL.map(function (full) { var disp = full.replace(/^\d{1,2}_?\s*/, ''); return '<option value="' + esc(full) + '"' + (disp === p['현재 단계'] ? ' selected' : '') + '>' + esc(disp) + '</option>'; }).join('') + '</select>' +
+      '<button class="btn pri" type="button" data-stage-save="' + esc(id) + '">저장</button>' +
+      '<span class="sub">바로 시트에 반영돼요. 팀원 수정 키가 필요해요.</span></div>';
+  }
   var cost = S.hasCost ? d.costMap[id] : null;
-  h += '<div class="card"><div class="two"><div class="photo">' + (photo ? '<img src="' + esc(imgUrl(photo)) + '" alt="' + esc(p['기획명']) + ' 메인 사진">' : '제품 사진') + '</div>' +
+  h += '<div class="card">' +
     '<div class="info"><div><h2>제품 정보</h2>' + infoKv([['기획명', p['기획명']], ['Flow FIX 제품명', p['Flow FIX 제품명']], ['영문 판매명', p['영문 판매명']], ['카테고리', p['카테고리']], ['구분 · 차수', p['구분'] + ' · ' + p['차수']], ['컬러', cchips(p['컬러']) || '', true], ['세트 연결', p['세트 연결']]]) + '</div>' +
     '<div><h2>&nbsp;</h2>' + infoKv([['혼용율', p['혼용율']], ['원산지(제조국)', p['원산지(제조국)']], ['워싱 여부', p['워싱 여부']], ['봉제공장', p['봉제공장']], ['FIT', p['FIT']], ['원단', p['원단']], ['규격 · 중량', p['규격 · 중량']], ['워싱기법', p['워싱기법']]]) +
     (S.hasCost ? infoKv([['원가 (VAT+)', cost && cost['원가 NET TOTAL (VAT+)'] ? Number(num(cost['원가 NET TOTAL (VAT+)'])).toLocaleString() + '원' : '미입력'], ['판가 · 배수', cost && cost['판가'] ? Number(num(cost['판가'])).toLocaleString() + '원 · ' + (num(cost['원가 NET TOTAL (VAT+)']) ? (num(cost['판가']) / num(cost['원가 NET TOTAL (VAT+)'])).toFixed(1) + '배' : '-') : '미입력']]) : '<div class="kv"><span>원가 · 판가</span><span class="locked">열람 권한이 없습니다</span></div>') + '</div></div>' +
-    (p['메모'] ? '<p class="note">메모: ' + esc(p['메모']) + '</p>' : '') + '</div></div>';
+    (p['메모'] ? '<p class="note">메모: ' + esc(p['메모']) + '</p>' : '') + '</div>';
   h += '<div class="card"><div class="row"><h2>단계별 수량 추적</h2><span class="sub">워싱 ' + esc(p['워싱 여부'] || '미지정') + ' · 각 칸 아래 표시는 바로 앞 단계 대비입니다. 컬러를 누르면 사이즈별로 펼쳐집니다.</span></div>' + qtyHtml(id, p['워싱 여부']) + '</div>';
   var sz = d.sizes[id] || [];
-  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n mono">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
+  h += '<div class="card"><h2>사이즈표</h2>' + (window.SIZEIMG && SIZEIMG[id] ? '<img src="' + SIZEIMG[id] + '" alt="사이즈표" style="max-width:100%;border:1px solid var(--line);border-radius:8px">' : sz.length ? '<div class="scroll"><table class="sizetbl"><thead><tr><th>부위</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th class="n">5</th><th>비고</th></tr></thead><tbody>' + sz.map(function (r) { return '<tr><td>' + esc(r['부위']) + '</td>' + [1,2,3,4,5].map(function (n) { var v = r['사이즈 ' + n]; return '<td class="n">' + (v === '' ? '<span class="sub">–</span>' : esc(v)) + '</td>'; }).join('') + '<td class="sub">' + esc(r['비고']) + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="empty">등록된 사이즈표가 없어요.</div>') + '</div>';
   var ins = d.inspById[id] || [];
   h += '<div class="card"><h2>3PL 입고 검수</h2>' + (ins.length ? inspTable(ins) : '<div class="empty">아직 3PL 입고 기록이 없어요.</div>') + '</div>';
   var items = d.packItems[id] || [];
@@ -600,6 +627,37 @@ function viewArchive() {
   return h;
 }
 
+function saveStage(id) {
+  if (!window.RENACTS || !window.RENACTS.editField) return;
+  var sel = document.getElementById('stageSel'); if (!sel) return;
+  var val = sel.value, p = S.data.byId[id]; if (!p) return;
+  var disp = val.replace(/^\d{1,2}_?\s*/, '');
+  if (disp === p['현재 단계']) { window.RENACTS.toast('이미 같은 단계예요.'); return; }
+  var code = (p['품번'] + (p['차수'] ? '_' + p['차수'] : '')).toUpperCase();
+  var key = window.RENACTS.getEditKey();
+  if (!key) {
+    key = (window.prompt('팀원 수정 키를 입력하세요 (담당자에게 받은 값). 한 번 입력하면 이 브라우저에 저장돼요.') || '').trim();
+    if (!key) return;
+    window.RENACTS.setEditKey(key);
+  }
+  var btn = document.querySelector('[data-stage-save="' + id + '"]');
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+  window.RENACTS.editField(code, '현재 단계', val, key).then(function (res) {
+    if (!res.ok) {
+      if (/수정 키/.test(res.error || '')) window.RENACTS.clearEditKey();
+      window.RENACTS.toast(res.error || '저장 실패', true);
+      if (btn) { btn.disabled = false; btn.textContent = '저장'; }
+      return;
+    }
+    p['현재 단계'] = disp;
+    window.RENACTS.toast((res.editor || '') + '님이 단계를 "' + disp + '"로 바꿨어요. (최신화를 누르면 팀 전체에 반영됩니다)');
+    render();
+  }).catch(function (e) {
+    window.RENACTS.toast('저장 실패: ' + e.message, true);
+    if (btn) { btn.disabled = false; btn.textContent = '저장'; }
+  });
+}
+
 /* ---------- 라우터 ---------- */
 function render() {
   if (!S.data) return;
@@ -626,6 +684,8 @@ document.addEventListener('click', function (e) {
   if (e.target.closest('.kmore')) return;
   var c = e.target.closest('[data-card]');
   if (c) { var k = c.dataset.card; S.openCards[k] = !S.openCards[k]; c.classList.toggle('open', S.openCards[k]); c.setAttribute('aria-expanded', S.openCards[k]); return; }
+  var ss = e.target.closest('[data-stage-save]');
+  if (ss) { saveStage(ss.dataset.stageSave); return; }
   var t = e.target.closest('[data-filter],[data-inb],[data-bc],[data-color],[data-file]'); if (!t) return;
   if (t.dataset.filter) S.filter = t.dataset.filter;
   else if (t.dataset.inb) S.inboundFilter = t.dataset.inb;
