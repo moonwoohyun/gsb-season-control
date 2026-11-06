@@ -150,6 +150,7 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
   var API = (window.SITE_CONFIG && window.SITE_CONFIG.api) || '';
   if (!API) return; // 서버 주소가 없으면 예전 데모처럼 동작
   var PW = 'renacts.pw';
+  var EKEY = 'renacts.ekey';
   var DATA = null;
   var seg = location.pathname.replace(/\/+$/, '').split('/').pop() || '';
   var qs = new URLSearchParams(location.search).get('s') || '';
@@ -171,6 +172,10 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
     var t = $('#toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
     t.textContent = msg; t.className = 'show' + (bad ? ' bad' : '');
     clearTimeout(t._h); t._h = setTimeout(function () { t.className = ''; }, 5000);
+  }
+  function editApi(op, args, key) {
+    return fetch(API, { method: 'POST', body: JSON.stringify({ action: 'edit', key: key, op: op, args: args, via: '사이트' }), redirect: 'follow' })
+      .then(function (r) { return r.json(); });
   }
   function use(data) {
     DATA = data;
@@ -256,7 +261,12 @@ button.tgl{font:inherit;font-weight:700;background:none;border:0;color:var(--nav
       var go = pw ? api('get', pw).then(function (d) { use(d); return d; }).catch(function (e) { if (e.auth) sdel(PW); return lockForm(e.auth ? '' : e.message); }) : lockForm('');
       return go.then(labels);
     },
-    reload: null
+    reload: null,
+    toast: toast,
+    getEditKey: function () { return sget(EKEY); },
+    setEditKey: function (k) { sset(EKEY, k); },
+    clearEditKey: function () { sdel(EKEY); },
+    editField: function (code, label, value, key) { return editApi('field-set', { code: code, tab: '기본정보', label: label, value: value }, key); }
   };
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -280,6 +290,7 @@ var DEMO = !CFG.CLIENT_ID;
 var TABS = ['10_제품마스터','11_컬러','12_히스토리','13_작업지시서','14_사이즈치수','15_이동수량','20_3PL검수','21_패킹리스트','22_패킹보관함','30_바코드마스터','99_설정'];
 var MOVE_STAGES = ['작업 요청','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
 var MOVE_COLS = ['요청수량','재단','워싱처 입고','완성집 입고','수납용 입고','3PL 입고'];
+var STAGE_FULL = ['01_개발진행중', '02_패턴', '03_프로토샘플', '04_QC · 재QC', '05_APP', '06_메인수납', '07_종결', '08_드랍'];
 var CMAP = { 'NAVY':['#2A3560','#fff'],'BLUE STRIPE':['#9DB4D6','#1B2A3D'],'BEIGE':['#D9C3A0','#2A2218'], 'GN':['#2F5D43','#fff'],'NV':['#2A3560','#fff'],'BE':['#D9C3A0','#2A2218'],'LBU':['#BCD0E6','#1B2A3D'],'GREEN MULTI':['#2F5D43','#fff'],'WHITE MULTI':['#ECEAE2','#2A2A28'],'RED MULTI':['#8E2A25','#fff'],'ORANGE MULTI':['#E0954F','#2A1A0A'] };
 
 var S = { season: SEASONS[0].label, token: null, data: null, cost: {}, hasCost: false, demoCost: false, openColors: {}, filter: 'all', inboundFilter: 'all', bcTab: 'old', q: '', openFile: null, openCards: {} };
@@ -528,6 +539,12 @@ function viewProduct(id) {
   h += '<div class="steps">' + ST.map(function (n, i) {
     var f = hist.filter(function (x) { return x['단계'] === n; })[0];
     return '<div class="step ' + (cur < 0 ? 'todo' : i < cur ? '' : i === cur ? 'cur' : 'todo') + '"><div class="sn">0' + (i + 1) + '</div><div class="st">' + esc(n) + '</div><div class="sd">' + (f ? esc(md(f['일자'])) : i === cur ? '진행중' : '&nbsp;') + '</div></div>'; }).join('') + '</div>';
+  if (window.RENACTS && window.RENACTS.editField) {
+    h += '<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><strong style="margin-right:4px">단계 변경</strong>' +
+      '<select id="stageSel">' + STAGE_FULL.map(function (full) { var disp = full.replace(/^\d{1,2}_?\s*/, ''); return '<option value="' + esc(full) + '"' + (disp === p['현재 단계'] ? ' selected' : '') + '>' + esc(disp) + '</option>'; }).join('') + '</select>' +
+      '<button class="btn pri" type="button" data-stage-save="' + esc(id) + '">저장</button>' +
+      '<span class="sub">바로 시트에 반영돼요. 팀원 수정 키가 필요해요.</span></div>';
+  }
   var cost = S.hasCost ? d.costMap[id] : null;
   h += '<div class="card">' +
     '<div class="info"><div><h2>제품 정보</h2>' + infoKv([['기획명', p['기획명']], ['Flow FIX 제품명', p['Flow FIX 제품명']], ['영문 판매명', p['영문 판매명']], ['카테고리', p['카테고리']], ['구분 · 차수', p['구분'] + ' · ' + p['차수']], ['컬러', cchips(p['컬러']) || '', true], ['세트 연결', p['세트 연결']]]) + '</div>' +
@@ -610,6 +627,37 @@ function viewArchive() {
   return h;
 }
 
+function saveStage(id) {
+  if (!window.RENACTS || !window.RENACTS.editField) return;
+  var sel = document.getElementById('stageSel'); if (!sel) return;
+  var val = sel.value, p = S.data.byId[id]; if (!p) return;
+  var disp = val.replace(/^\d{1,2}_?\s*/, '');
+  if (disp === p['현재 단계']) { window.RENACTS.toast('이미 같은 단계예요.'); return; }
+  var code = (p['품번'] + (p['차수'] ? '_' + p['차수'] : '')).toUpperCase();
+  var key = window.RENACTS.getEditKey();
+  if (!key) {
+    key = (window.prompt('팀원 수정 키를 입력하세요 (담당자에게 받은 값). 한 번 입력하면 이 브라우저에 저장돼요.') || '').trim();
+    if (!key) return;
+    window.RENACTS.setEditKey(key);
+  }
+  var btn = document.querySelector('[data-stage-save="' + id + '"]');
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+  window.RENACTS.editField(code, '현재 단계', val, key).then(function (res) {
+    if (!res.ok) {
+      if (/수정 키/.test(res.error || '')) window.RENACTS.clearEditKey();
+      window.RENACTS.toast(res.error || '저장 실패', true);
+      if (btn) { btn.disabled = false; btn.textContent = '저장'; }
+      return;
+    }
+    p['현재 단계'] = disp;
+    window.RENACTS.toast((res.editor || '') + '님이 단계를 "' + disp + '"로 바꿨어요. (최신화를 누르면 팀 전체에 반영됩니다)');
+    render();
+  }).catch(function (e) {
+    window.RENACTS.toast('저장 실패: ' + e.message, true);
+    if (btn) { btn.disabled = false; btn.textContent = '저장'; }
+  });
+}
+
 /* ---------- 라우터 ---------- */
 function render() {
   if (!S.data) return;
@@ -636,6 +684,8 @@ document.addEventListener('click', function (e) {
   if (e.target.closest('.kmore')) return;
   var c = e.target.closest('[data-card]');
   if (c) { var k = c.dataset.card; S.openCards[k] = !S.openCards[k]; c.classList.toggle('open', S.openCards[k]); c.setAttribute('aria-expanded', S.openCards[k]); return; }
+  var ss = e.target.closest('[data-stage-save]');
+  if (ss) { saveStage(ss.dataset.stageSave); return; }
   var t = e.target.closest('[data-filter],[data-inb],[data-bc],[data-color],[data-file]'); if (!t) return;
   if (t.dataset.filter) S.filter = t.dataset.filter;
   else if (t.dataset.inb) S.inboundFilter = t.dataset.inb;
